@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Client;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\MachineController;
+use App\Http\Controllers\OpenTunnelController;
+use App\Http\Controllers\CloseTunnelController;
 
 // Redireciona a rota inicial "/" para o dashboard
 Route::get('/', function () {
@@ -37,5 +39,11 @@ Route::middleware([
 
     // Excluir máquina específica
     Route::delete('/machines/{machine}', [MachineController::class, 'destroy'])->name('machines.destroy');
-});
 
+    // Rotas para abertura e fechamento de túnel
+    // Rota para abrir o túnel de uma máquina
+    Route::post('/machines/{machine}/open-tunnel', [OpenTunnelController::class, 'open'])->name('machines.open-tunnel');
+
+    // Rota para fechar o túnel de uma máquina
+    Route::post('/machines/{machine}/close-tunnel', [CloseTunnelController::class, 'close'])->name('machines.close-tunnel');
+});

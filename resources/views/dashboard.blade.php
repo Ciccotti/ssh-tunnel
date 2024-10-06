@@ -56,19 +56,39 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($client->machines as $machine)
+                                        @php
+                                            $connectionRequest = $machine->connectionRequests()->latest()->first();
+                                            $isPending = $connectionRequest && $connectionRequest->status === 'pending';
+                                            $isInProgress = $connectionRequest && $connectionRequest->status === 'in_progress';
+                                        @endphp
                                         <tr>
                                             <td class="border px-4 py-2 text-gray-800">{{ $machine->name }}</td>
                                             <td class="border px-4 py-2 text-gray-800">{{ $machine->specifications }}</td>
                                             <td class="border px-4 py-2 text-gray-800">
-                                                <input type="number" name="service" class="form-control w-full border rounded-lg p-2" placeholder="Porta do cliente que deseja utilizar">
+                                                <input type="number" name="service_port" class="service-port form-control w-full border rounded-lg p-2" placeholder="Porta do cliente" data-machine-id="{{ $machine->id }}">
                                             </td>
                                             <td class="border px-4 py-2 text-gray-800">
-                                                <input type="number" name="random_port" class="form-control w-full border rounded-lg p-2" value="{{ $machine->random_port ?? '' }}" placeholder="Porta para conectar no cliente" disabled>
+                                                <input type="number" class="random-port form-control w-full border rounded-lg p-2" value="{{ $machine->random_port ?? '' }}" placeholder="Porta para conectar" data-machine-id="{{ $machine->id }}" disabled>
                                             </td>
+
                                             <td class="border px-4 py-2">
-                                                <button class="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700">
-                                                    Abrir Túnel
-                                                </button>
+                                                @if ($isPending)
+                                                    <button class="bg-gray-400 text-black px-4 py-2 rounded" disabled>
+                                                        Conectando...
+                                                    </button>
+                                                @elseif ($isInProgress)
+                                                    <button class="toggle-tunnel-btn bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700" 
+                                                            data-machine-id="{{ $machine->id }}" 
+                                                            data-open="false">
+                                                        Fechar Túnel
+                                                    </button>
+                                                @else
+                                                    <button class="toggle-tunnel-btn bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700" 
+                                                            data-machine-id="{{ $machine->id }}" 
+                                                            data-open="true">
+                                                        Abrir Túnel
+                                                    </button>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
@@ -206,54 +226,43 @@
     <script>
         function showClientModal() {
             document.getElementById('clientModal').style.display = 'flex';
-            addEscListener(); // Adiciona o listener para fechar com ESC
+            addEscListener();
         }
+
         function hideClientModal() {
             document.getElementById('clientModal').style.display = 'none';
-            removeEscListener(); // Remove o listener quando o modal é fechado
+            removeEscListener();
         }
 
         function showMachineModal() {
             document.getElementById('machineModal').style.display = 'flex';
-            addEscListener(); // Adiciona o listener para fechar com ESC
+            addEscListener();
         }
+
         function hideMachineModal() {
             document.getElementById('machineModal').style.display = 'none';
-            removeEscListener(); // Remove o listener quando o modal é fechado
+            removeEscListener();
         }
 
         function showDeleteModal() {
             document.getElementById('deleteModal').style.display = 'flex';
-            addEscListener(); // Adiciona o listener para fechar com ESC
+            addEscListener();
         }
+
         function hideDeleteModal() {
             document.getElementById('deleteModal').style.display = 'none';
-            removeEscListener(); // Remove o listener quando o modal é fechado
+            removeEscListener();
         }
 
         function toggleDropdown(clientId) {
             var dropdown = document.getElementById('dropdown-' + clientId);
-            if (dropdown.classList.contains('hidden')) {
-                dropdown.classList.remove('hidden');
-            } else {
-                dropdown.classList.add('hidden');
-            }
-        }
-
-        function showDeleteClientOptions() {
-            document.getElementById('deleteClientOptions').classList.remove('hidden');
-            document.getElementById('deleteMachineOptions').classList.add('hidden');
-        }
-
-        function showDeleteMachineOptions() {
-            document.getElementById('deleteMachineOptions').classList.remove('hidden');
-            document.getElementById('deleteClientOptions').classList.add('hidden');
+            dropdown.classList.toggle('hidden');
         }
 
         function loadMachines(clientId) {
             var machineSelect = document.getElementById('deleteMachineSelect');
             machineSelect.disabled = false;
-            machineSelect.innerHTML = ''; // Limpa as máquinas anteriores
+            machineSelect.innerHTML = '';
 
             @foreach ($clients as $client)
                 if (clientId == {{ $client->id }}) {
@@ -309,7 +318,75 @@
             }
         }
 
-        // Funções para adicionar e remover o listener do ESC
+		document.querySelectorAll('.toggle-tunnel-btn').forEach(button => {
+			button.addEventListener('click', function () {
+				const machineId = this.getAttribute('data-machine-id');
+				const servicePort = document.querySelector(`input[name="service_port"][data-machine-id="${machineId}"]`).value;
+				const isOpening = this.getAttribute('data-open') === 'true';
+
+				if (!servicePort) {
+					alert("Por favor, insira a porta do cliente.");
+					return;
+				}
+
+				const url = isOpening ? `/machines/${machineId}/open-tunnel` : `/machines/${machineId}/close-tunnel`;
+
+				// Quando for abrir o túnel, exibe "Conectando..." no botão
+				if (isOpening) {
+					this.innerText = "Conectando...";
+					this.disabled = true;
+				}
+
+				fetch(url, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRF-TOKEN': '{{ csrf_token() }}'
+					},
+					body: JSON.stringify({ service_port: servicePort })
+				})
+				.then(response => response.json())
+				.then(data => {
+					console.log('Resposta do servidor:', data); // Adicione este log para depuração
+					if (data.success) {
+						if (isOpening) {
+							// Achar o campo random-port relacionado à máquina correta
+							const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
+							
+							if (randomPortInput) {
+								console.log('Atualizando a porta para:', data.server_port);
+								randomPortInput.value = data.server_port;  // Atualiza o campo com a porta aleatória
+							} else {
+								console.error('Campo random-port não encontrado para a máquina:', machineId);
+							}
+
+							this.innerText = "Fechar Túnel";
+							this.setAttribute('data-open', 'false');
+							this.disabled = false;
+							this.classList.remove('bg-blue-500');
+							this.classList.add('bg-red-500');
+						} else {
+							this.innerText = "Abrir Túnel";
+							this.setAttribute('data-open', 'true');
+							this.classList.remove('bg-red-500');
+							this.classList.add('bg-blue-500');
+						}
+					} else {
+						alert('Erro ao executar a ação: ' + data.message);
+						this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+						this.disabled = false;
+					}
+				})
+				.catch(error => {
+					console.error('Erro:', error);
+					alert('Ocorreu um erro ao tentar abrir o túnel. Verifique o console para mais detalhes.');
+					this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+					this.disabled = false;
+				});
+			});
+		});
+
+
         function addEscListener() {
             document.addEventListener('keydown', escFunction);
         }
@@ -318,7 +395,6 @@
             document.removeEventListener('keydown', escFunction);
         }
 
-        // Função que será chamada quando a tecla ESC for pressionada
         function escFunction(event) {
             if (event.key === 'Escape') {
                 hideClientModal();
@@ -328,3 +404,4 @@
         }
     </script>
 </x-app-layout>
+
