@@ -25,8 +25,8 @@
                                     <tr>
                                         <th class="px-4 py-2 text-gray-800">Máquina</th>
                                         <th class="px-4 py-2 text-gray-800">Especificações</th>
-                                        <th class="px-4 py-2 text-gray-800">Serviço</th>
-                                        <th class="px-4 py-2 text-gray-800">Porta Aleatória</th>
+                                        <th class="px-4 py-2 text-gray-800">Serviço do Cliente</th>
+                                        <th class="px-4 py-2 text-gray-800">Porta Para Conexão</th>
                                         <th class="px-4 py-2 text-gray-800">Ações</th>
                                     </tr>
                                 </thead>
@@ -35,8 +35,12 @@
                                         <tr>
                                             <td class="border px-4 py-2 text-gray-800">{{ $machine->name }}</td>
                                             <td class="border px-4 py-2 text-gray-800">{{ $machine->specifications }}</td>
-                                            <td class="border px-4 py-2 text-gray-800"></td>
-                                            <td class="border px-4 py-2 text-gray-800"></td>
+                                            <td class="border px-4 py-2 text-gray-800">
+                                                <input type="number" name="service" class="form-control w-full border rounded-lg p-2" placeholder="Porta do cliente que deseja utilizar">
+                                            </td>
+                                            <td class="border px-4 py-2 text-gray-800">
+                                                <input type="number" name="random_port" class="form-control w-full border rounded-lg p-2" value="" placeholder="Porta para conectar no cliente" disabled>
+                                            </td>
                                             <td class="border px-4 py-2">
                                                 <button class="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700">
                                                     Abrir Túnel

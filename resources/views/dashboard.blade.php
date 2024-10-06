@@ -5,6 +5,19 @@
         </h2>
     </x-slot>
 
+    <!-- Exibe mensagens de sucesso ou erro -->
+    @if (session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ session('error') }}</span>
+        </div>
+    @endif
+
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
@@ -39,7 +52,7 @@
                                                 <input type="number" name="service" class="form-control w-full border rounded-lg p-2" placeholder="Porta do cliente que deseja utilizar">
                                             </td>
                                             <td class="border px-4 py-2 text-gray-800">
-                                                <input type="number" name="random_port" class="form-control w-full border rounded-lg p-2" value="" placeholder="Porta para conectar no cliente" disabled>
+                                                <input type="number" name="random_port" class="form-control w-full border rounded-lg p-2" value="{{ $machine->random_port ?? '' }}" placeholder="Porta para conectar no cliente" disabled>
                                             </td>
                                             <td class="border px-4 py-2">
                                                 <button class="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700">
@@ -151,7 +164,7 @@
                         <option value="{{ $client->id }}">{{ $client->name }}</option>
                     @endforeach
                 </select>
-                <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteClient()">
+                <button class="bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteClient()">
                     Excluir Cliente
                 </button>
             </div>
@@ -167,7 +180,7 @@
                 <select id="deleteMachineSelect" class="form-control w-full border rounded-lg p-2 mt-2" disabled>
                     <option value="">Selecione uma Máquina</option>
                 </select>
-                <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteMachine()">
+                <button class="bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteMachine()">
                     Excluir Máquina
                 </button>
             </div>
