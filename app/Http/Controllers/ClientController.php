@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ClientController extends Controller
 {
+    // Função para armazenar um novo cliente
     public function store(Request $request)
     {
         // Valida os dados recebidos
@@ -24,6 +25,17 @@ class ClientController extends Controller
         // Redireciona de volta ao dashboard com uma mensagem de sucesso
         return redirect()->route('dashboard')->with('success', 'Cliente cadastrado com sucesso!');
     }
+
+    // Função para deletar um cliente e todas as suas máquinas
+    public function destroy(Client $client)
+    {
+        // Exclui todas as máquinas associadas ao cliente
+        $client->machines()->delete();
+
+        // Exclui o cliente
+        $client->delete();
+
+        // Redireciona de volta ao dashboard com uma mensagem de sucesso
+        return redirect()->route('dashboard')->with('success', 'Cliente e suas máquinas foram excluídos com sucesso!');
+    }
 }
-
-

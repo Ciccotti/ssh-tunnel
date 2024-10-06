@@ -16,17 +16,24 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
-    
+
     // Rota do dashboard que carrega os clientes e suas máquinas
     Route::get('/dashboard', function () {
         $clients = Client::with('machines')->get(); // Carrega clientes com suas máquinas
         return view('dashboard', compact('clients')); // Passa os clientes para a view
     })->name('dashboard');
 
-    // Rota para armazenar novos clientes
+    // CRUD de Clientes
+    // Armazenar novo cliente
     Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
+    
+    // Excluir cliente e todas as suas máquinas
+    Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
 
-    // Rota para armazenar novas máquinas
+    // CRUD de Máquinas
+    // Armazenar nova máquina
     Route::post('/machines', [MachineController::class, 'store'])->name('machines.store');
-});
 
+    // Excluir máquina específica
+    Route::delete('/machines/{machine}', [MachineController::class, 'destroy'])->name('machines.destroy');
+});

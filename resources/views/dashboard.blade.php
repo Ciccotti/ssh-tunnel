@@ -25,8 +25,8 @@
                                     <tr>
                                         <th class="px-4 py-2 text-gray-800">Máquina</th>
                                         <th class="px-4 py-2 text-gray-800">Especificações</th>
-                                        <th class="px-4 py-2 text-gray-800">Serviço</th>
-                                        <th class="px-4 py-2 text-gray-800">Porta Aleatória</th>
+                                        <th class="px-4 py-2 text-gray-800">Serviço do Cliente</th>
+                                        <th class="px-4 py-2 text-gray-800">Porta Para Conexão</th>
                                         <th class="px-4 py-2 text-gray-800">Ações</th>
                                     </tr>
                                 </thead>
@@ -35,8 +35,12 @@
                                         <tr>
                                             <td class="border px-4 py-2 text-gray-800">{{ $machine->name }}</td>
                                             <td class="border px-4 py-2 text-gray-800">{{ $machine->specifications }}</td>
-                                            <td class="border px-4 py-2 text-gray-800"></td>
-                                            <td class="border px-4 py-2 text-gray-800"></td>
+                                            <td class="border px-4 py-2 text-gray-800">
+                                                <input type="number" name="service" class="form-control w-full border rounded-lg p-2" placeholder="Porta do cliente que deseja utilizar">
+                                            </td>
+                                            <td class="border px-4 py-2 text-gray-800">
+                                                <input type="number" name="random_port" class="form-control w-full border rounded-lg p-2" value="" placeholder="Porta para conectar no cliente" disabled>
+                                            </td>
                                             <td class="border px-4 py-2">
                                                 <button class="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700">
                                                     Abrir Túnel
@@ -50,13 +54,16 @@
                     </div>
                 @endforeach
 
-                <!-- Botões para cadastrar cliente e máquina -->
+                <!-- Botões para cadastrar cliente, máquina e excluir -->
                 <div class="flex justify-between mt-6">
                     <button class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700" onclick="showClientModal()">
                         Cadastrar Cliente
                     </button>
                     <button class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700" onclick="showMachineModal()">
                         Cadastrar Máquina
+                    </button>
+                    <button class="bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700" onclick="showDeleteModal()">
+                        Excluir Cliente/Máquina
                     </button>
                 </div>
             </div>
@@ -124,19 +131,80 @@
         </div>
     </div>
 
+    <!-- Modal para excluir cliente ou máquina -->
+    <div id="deleteModal" class="fixed inset-0 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Excluir Cliente ou Máquina</h2>
+            <div class="mb-4">
+                <button class="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700" onclick="showDeleteClientOptions()">
+                    Excluir Cliente
+                </button>
+                <button class="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700 ml-4" onclick="showDeleteMachineOptions()">
+                    Excluir Máquina
+                </button>
+            </div>
+            <div id="deleteClientOptions" class="hidden">
+                <label for="deleteClientSelect" class="block text-sm font-medium text-gray-800">Selecione o Cliente</label>
+                <select id="deleteClientSelect" class="form-control w-full border rounded-lg p-2">
+                    <option value="">Selecione um Cliente</option>
+                    @foreach ($clients as $client)
+                        <option value="{{ $client->id }}">{{ $client->name }}</option>
+                    @endforeach
+                </select>
+                <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteClient()">
+                    Excluir Cliente
+                </button>
+            </div>
+            <div id="deleteMachineOptions" class="hidden">
+                <label for="deleteClientSelectMachine" class="block text-sm font-medium text-gray-800">Selecione o Cliente</label>
+                <select id="deleteClientSelectMachine" class="form-control w-full border rounded-lg p-2" onchange="loadMachines(this.value)">
+                    <option value="">Selecione um Cliente</option>
+                    @foreach ($clients as $client)
+                        <option value="{{ $client->id }}">{{ $client->name }}</option>
+                    @endforeach
+                </select>
+                <label for="deleteMachineSelect" class="block text-sm font-medium text-gray-800 mt-4">Selecione a Máquina</label>
+                <select id="deleteMachineSelect" class="form-control w-full border rounded-lg p-2 mt-2" disabled>
+                    <option value="">Selecione uma Máquina</option>
+                </select>
+                <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteMachine()">
+                    Excluir Máquina
+                </button>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button type="button" onclick="hideDeleteModal()" class="bg-gray-400 text-black px-4 py-2 rounded mr-2">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function showClientModal() {
             document.getElementById('clientModal').style.display = 'flex';
+            addEscListener(); // Adiciona o listener para fechar com ESC
         }
         function hideClientModal() {
             document.getElementById('clientModal').style.display = 'none';
+            removeEscListener(); // Remove o listener quando o modal é fechado
         }
 
         function showMachineModal() {
             document.getElementById('machineModal').style.display = 'flex';
+            addEscListener(); // Adiciona o listener para fechar com ESC
         }
         function hideMachineModal() {
             document.getElementById('machineModal').style.display = 'none';
+            removeEscListener(); // Remove o listener quando o modal é fechado
+        }
+
+        function showDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'flex';
+            addEscListener(); // Adiciona o listener para fechar com ESC
+        }
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            removeEscListener(); // Remove o listener quando o modal é fechado
         }
 
         function toggleDropdown(clientId) {
@@ -145,6 +213,93 @@
                 dropdown.classList.remove('hidden');
             } else {
                 dropdown.classList.add('hidden');
+            }
+        }
+
+        function showDeleteClientOptions() {
+            document.getElementById('deleteClientOptions').classList.remove('hidden');
+            document.getElementById('deleteMachineOptions').classList.add('hidden');
+        }
+
+        function showDeleteMachineOptions() {
+            document.getElementById('deleteMachineOptions').classList.remove('hidden');
+            document.getElementById('deleteClientOptions').classList.add('hidden');
+        }
+
+        function loadMachines(clientId) {
+            var machineSelect = document.getElementById('deleteMachineSelect');
+            machineSelect.disabled = false;
+            machineSelect.innerHTML = ''; // Limpa as máquinas anteriores
+
+            @foreach ($clients as $client)
+                if (clientId == {{ $client->id }}) {
+                    @foreach ($client->machines as $machine)
+                        var option = document.createElement('option');
+                        option.value = "{{ $machine->id }}";
+                        option.text = "{{ $machine->name }}";
+                        machineSelect.appendChild(option);
+                    @endforeach
+                }
+            @endforeach
+        }
+
+        function deleteClient() {
+            var clientId = document.getElementById('deleteClientSelect').value;
+            if (clientId) {
+                var form = document.createElement('form');
+                form.action = '/clients/' + clientId;
+                form.method = 'POST';
+                var csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = '{{ csrf_token() }}';
+                form.appendChild(csrfInput);
+                var methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+                form.appendChild(methodInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function deleteMachine() {
+            var machineId = document.getElementById('deleteMachineSelect').value;
+            if (machineId) {
+                var form = document.createElement('form');
+                form.action = '/machines/' + machineId;
+                form.method = 'POST';
+                var csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = '{{ csrf_token() }}';
+                form.appendChild(csrfInput);
+                var methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+                form.appendChild(methodInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Funções para adicionar e remover o listener do ESC
+        function addEscListener() {
+            document.addEventListener('keydown', escFunction);
+        }
+
+        function removeEscListener() {
+            document.removeEventListener('keydown', escFunction);
+        }
+
+        // Função que será chamada quando a tecla ESC for pressionada
+        function escFunction(event) {
+            if (event.key === 'Escape') {
+                hideClientModal();
+                hideMachineModal();
+                hideDeleteModal();
             }
         }
     </script>

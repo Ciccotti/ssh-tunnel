@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 class MachineController extends Controller
 {
+    // Função para armazenar uma nova máquina
     public function store(Request $request)
     {
         // Valida os dados recebidos
@@ -21,12 +22,21 @@ class MachineController extends Controller
         Machine::create([
             'client_id' => $validated['client_id'],
             'name' => $validated['name'],
-            'specifications' => $validated['specifications'],
+            'specifications' => $validated['specifications'] ?? null,
             'hardware_id' => $validated['hardware_id'],
         ]);
 
         // Redireciona de volta ao dashboard com uma mensagem de sucesso
         return redirect()->route('dashboard')->with('success', 'Máquina cadastrada com sucesso!');
     }
-}
 
+    // Função para deletar uma máquina específica
+    public function destroy(Machine $machine)
+    {
+        // Exclui a máquina
+        $machine->delete();
+
+        // Redireciona de volta ao dashboard com uma mensagem de sucesso
+        return redirect()->route('dashboard')->with('success', 'Máquina excluída com sucesso!');
+    }
+}
