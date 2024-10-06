@@ -10,8 +10,9 @@ Route::get('/', function () {
     return redirect()->route('dashboard');
 });
 
-// Protege as rotas com middleware de autenticação
+// Protege as rotas com middleware de autenticação e middleware web para sessões
 Route::middleware([
+    'web', // Inclui o middleware 'web' para garantir que sessões e mensagens flash funcionem corretamente
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
@@ -26,7 +27,7 @@ Route::middleware([
     // CRUD de Clientes
     // Armazenar novo cliente
     Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
-    
+
     // Excluir cliente e todas as suas máquinas
     Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
 
@@ -37,3 +38,4 @@ Route::middleware([
     // Excluir máquina específica
     Route::delete('/machines/{machine}', [MachineController::class, 'destroy'])->name('machines.destroy');
 });
+

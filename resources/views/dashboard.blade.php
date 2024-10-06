@@ -7,14 +7,25 @@
 
     <!-- Exibe mensagens de sucesso ou erro -->
     @if (session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
             <span class="block sm:inline">{{ session('success') }}</span>
         </div>
     @endif
 
     @if (session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
             <span class="block sm:inline">{{ session('error') }}</span>
+        </div>
+    @endif
+
+    <!-- Exibe erros de validação -->
+    @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <ul class="list-disc pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
@@ -75,7 +86,7 @@
                     <button class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700" onclick="showMachineModal()">
                         Cadastrar Máquina
                     </button>
-                    <button class="bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700" onclick="showDeleteModal()">
+                    <button class="bg-red-500 text-red-700 px-4 py-2 rounded hover:bg-red-700" onclick="showDeleteModal()">
                         Excluir Cliente/Máquina
                     </button>
                 </div>
@@ -97,7 +108,7 @@
                     <button type="button" onclick="hideClientModal()" class="bg-gray-400 text-black px-4 py-2 rounded mr-2">
                         Cancelar
                     </button>
-                    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded">
+                    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700">
                         Salvar
                     </button>
                 </div>
@@ -136,7 +147,7 @@
                     <button type="button" onclick="hideMachineModal()" class="bg-gray-400 text-black px-4 py-2 rounded mr-2">
                         Cancelar
                     </button>
-                    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded">
+                    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700">
                         Salvar
                     </button>
                 </div>
@@ -317,4 +328,3 @@
         }
     </script>
 </x-app-layout>
-

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Machine;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
-use Illuminate\Validation\ValidationException;
 
 class MachineController extends Controller
 {
@@ -33,8 +32,13 @@ class MachineController extends Controller
             return redirect()->route('dashboard')->with('success', 'Máquina cadastrada com sucesso!');
 
         } catch (QueryException $e) {
-            // Captura o erro e redireciona com uma mensagem de erro
-            return redirect()->route('dashboard')->with('error', 'Erro ao cadastrar a máquina. O ID de hardware já existe.');
+            // Captura o erro de chave duplicada e redireciona com uma mensagem de erro
+            if ($e->errorInfo[1] == 1062) { // Código de erro para violação de chave única (MySQL-specific)
+                return redirect()->back()->with('error', 'Erro ao cadastrar a máquina. O ID de hardware já existe.')->withInput();
+            }
+
+            // Caso outro erro ocorra
+            return redirect()->back()->with('error', 'Ocorreu um erro inesperado ao cadastrar a máquina.')->withInput();
         }
     }
 
