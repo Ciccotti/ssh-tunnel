@@ -37,7 +37,7 @@ class OpenTunnelController extends Controller
             'service_port' => $validated['service_port'],
             'server_port' => $serverPort,
             'ip_address' => auth()->user()->external_ip,
-            'status' => 'pending',
+            'status' => 'pending', // Mantém o status como 'pending'
         ]);
 
         // Abre a porta no firewall para o IP do usuário
@@ -47,11 +47,12 @@ class OpenTunnelController extends Controller
             return response()->json(['success' => false, 'message' => 'Erro ao abrir a porta no firewall: ' . $e->getMessage()]);
         }
 
-        // Retorna o sucesso com a porta gerada
+        // Retorna a resposta com o status 'pending' para o front
         return response()->json([
             'success' => true,
-            'message' => 'Túnel aberto com sucesso na porta ' . $serverPort,
-            'server_port' => $serverPort, // Porta aleatória gerada retornada aqui
+            'message' => 'Túnel está em processo de abertura...',
+            'server_port' => $serverPort,
+            'status' => 'pending'
         ]);
     }
 

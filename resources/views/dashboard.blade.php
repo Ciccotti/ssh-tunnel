@@ -350,21 +350,22 @@
 					console.log('Resposta do servidor:', data); // Adicione este log para depuração
 					if (data.success) {
 						if (isOpening) {
-							// Achar o campo random-port relacionado à máquina correta
 							const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
 							
 							if (randomPortInput) {
-								console.log('Atualizando a porta para:', data.server_port);
 								randomPortInput.value = data.server_port;  // Atualiza o campo com a porta aleatória
-							} else {
-								console.error('Campo random-port não encontrado para a máquina:', machineId);
 							}
 
-							this.innerText = "Fechar Túnel";
-							this.setAttribute('data-open', 'false');
-							this.disabled = false;
-							this.classList.remove('bg-blue-500');
-							this.classList.add('bg-red-500');
+							if (data.status === 'pending') {
+								this.innerText = "Conectando...";
+								this.disabled = true;
+							} else if (data.status === 'in_progress') {
+								this.innerText = "Fechar Túnel";
+								this.setAttribute('data-open', 'false');
+								this.disabled = false;
+								this.classList.remove('bg-blue-500');
+								this.classList.add('bg-red-500');
+							}
 						} else {
 							this.innerText = "Abrir Túnel";
 							this.setAttribute('data-open', 'true');
@@ -387,6 +388,7 @@
 		});
 
 
+
         function addEscListener() {
             document.addEventListener('keydown', escFunction);
         }
@@ -404,4 +406,5 @@
         }
     </script>
 </x-app-layout>
+
 

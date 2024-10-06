@@ -28,9 +28,6 @@ class CloseTunnelController extends Controller
         return response()->json(['success' => true, 'message' => 'Túnel fechado com sucesso.']);
     }
 
-    /**
-     * Método para fechar a porta no firewall.
-     */
     private function closeFirewallPort($port)
     {
         $process = new Process(['sudo', 'ufw', 'delete', 'allow', 'from', 'any', 'to', 'any', 'port', $port]);
