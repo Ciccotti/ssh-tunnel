@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ConnectionRequest;
 use App\Models\Machine;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Illuminate\Http\Request;
 
 class OpenTunnelController extends Controller
@@ -24,15 +26,27 @@ class OpenTunnelController extends Controller
             return response()->json(['success' => false, 'message' => 'A porta escolhida já está em uso. Tente novamente.']);
         }
 
+        // Adiciona a regra no firewall para permitir a porta
+        try {
+            // Captura o IP do usuário da requisição (pode ser alterado para auth()->user()->external_ip se o IP for armazenado na tabela de usuários)
+            $userIp = $request->ip(); // Ou use auth()->user()->external_ip se necessário
+            $this->openFirewallPort($serverPort, $userIp);
+        } catch (ProcessFailedException $e) {
+            \Log::error('Erro ao abrir a porta no firewall: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Erro ao abrir a porta no firewall.']);
+        }
+
         // Cria uma solicitação de conexão com status 'pending'
         $connectionRequest = ConnectionRequest::create([
             'machine_id' => $machine->id,
             'user_id' => auth()->id(),
             'service_port' => $validated['service_port'],
             'server_port' => $serverPort,
-            'ip_address' => auth()->user()->external_ip,
+            'ip_address' => $userIp, // Salva o IP do usuário
             'status' => 'pending', // O status inicial é 'pending'
         ]);
+
+        \Log::info("Solicitação de conexão criada para máquina {$machine->id} na porta {$serverPort}");
 
         // Retorna a resposta inicial com o status 'pending' e a porta gerada
         return response()->json([
@@ -75,6 +89,7 @@ class OpenTunnelController extends Controller
     }
 
     // Funções auxiliares...
+
     private function generateRandomPort()
     {
         return rand(40000, 60000);
@@ -83,8 +98,21 @@ class OpenTunnelController extends Controller
     // Função para verificar se a porta está em uso (ajustada para verificar dinamicamente)
     private function isPortInUse($port)
     {
-        // Comando para verificar se a porta está em uso
-        $output = shell_exec("lsof -i :$port"); // Verifica se a porta está aberta
-        return !empty($output); // Retorna true se a porta estiver em uso
+        $output = shell_exec("lsof -i :$port");
+        return !empty($output);
+    }
+
+    // Função para abrir a porta no firewall, agora permitindo apenas o IP externo do usuário
+    private function openFirewallPort($port, $userIp)
+    {
+        $process = new Process(['sudo', 'ufw', 'allow', 'from', $userIp, 'to', 'any', 'port', $port]);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            \Log::error("Falha ao abrir a porta {$port} no firewall para o IP {$userIp}: " . $process->getErrorOutput());
+            throw new ProcessFailedException($process);
+        }
+        \Log::info("Porta {$port} aberta no firewall para o IP {$userIp}.");
     }
 }
+
