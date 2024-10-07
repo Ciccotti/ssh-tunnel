@@ -37,7 +37,7 @@ class OpenTunnelController extends Controller
             'service_port' => $validated['service_port'],
             'server_port' => $serverPort,
             'ip_address' => auth()->user()->external_ip,
-            'status' => 'pending', // Mantém o status como 'pending'
+            'status' => 'pending',
         ]);
 
         // Abre a porta no firewall para o IP do usuário
@@ -47,13 +47,24 @@ class OpenTunnelController extends Controller
             return response()->json(['success' => false, 'message' => 'Erro ao abrir a porta no firewall: ' . $e->getMessage()]);
         }
 
-        // Retorna a resposta com o status 'pending' para o front
+        // Retorna o sucesso com a porta gerada
         return response()->json([
             'success' => true,
-            'message' => 'Túnel está em processo de abertura...',
-            'server_port' => $serverPort,
-            'status' => 'pending'
+            'message' => 'Túnel aberto com sucesso na porta ' . $serverPort,
+            'server_port' => $serverPort, // Porta aleatória gerada retornada aqui
         ]);
+    }
+
+    // Método para verificar o status do túnel
+    public function getTunnelStatus(Machine $machine)
+    {
+        $connectionRequest = $machine->connectionRequests()->latest()->first();
+
+        if (!$connectionRequest) {
+            return response()->json(['status' => 'no_connection']);
+        }
+
+        return response()->json(['status' => $connectionRequest->status]);
     }
 
     private function generateRandomPort()

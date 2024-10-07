@@ -46,4 +46,7 @@ Route::middleware([
 
     // Rota para fechar o túnel de uma máquina
     Route::post('/machines/{machine}/close-tunnel', [CloseTunnelController::class, 'close'])->name('machines.close-tunnel');
+
+    // Rota para verificar o status do túnel de uma máquina
+    Route::get('/machines/{machine}/tunnel-status', [OpenTunnelController::class, 'getTunnelStatus'])->name('machines.tunnel-status');
 });

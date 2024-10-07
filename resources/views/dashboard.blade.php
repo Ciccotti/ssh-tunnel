@@ -254,6 +254,16 @@
             removeEscListener();
         }
 
+        function showDeleteClientOptions() {
+            document.getElementById('deleteClientOptions').classList.remove('hidden');
+            document.getElementById('deleteMachineOptions').classList.add('hidden');
+        }
+
+        function showDeleteMachineOptions() {
+            document.getElementById('deleteMachineOptions').classList.remove('hidden');
+            document.getElementById('deleteClientOptions').classList.add('hidden');
+        }
+
         function toggleDropdown(clientId) {
             var dropdown = document.getElementById('dropdown-' + clientId);
             dropdown.classList.toggle('hidden');
@@ -318,76 +328,70 @@
             }
         }
 
-		document.querySelectorAll('.toggle-tunnel-btn').forEach(button => {
-			button.addEventListener('click', function () {
-				const machineId = this.getAttribute('data-machine-id');
-				const servicePort = document.querySelector(`input[name="service_port"][data-machine-id="${machineId}"]`).value;
-				const isOpening = this.getAttribute('data-open') === 'true';
+        document.querySelectorAll('.toggle-tunnel-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const machineId = this.getAttribute('data-machine-id');
+                const servicePort = document.querySelector(`input[name="service_port"][data-machine-id="${machineId}"]`).value;
+                const isOpening = this.getAttribute('data-open') === 'true';
 
-				if (!servicePort) {
-					alert("Por favor, insira a porta do cliente.");
-					return;
-				}
+                if (!servicePort) {
+                    alert("Por favor, insira a porta do cliente.");
+                    return;
+                }
 
-				const url = isOpening ? `/machines/${machineId}/open-tunnel` : `/machines/${machineId}/close-tunnel`;
+                const url = isOpening ? `/machines/${machineId}/open-tunnel` : `/machines/${machineId}/close-tunnel`;
 
-				// Quando for abrir o túnel, exibe "Conectando..." no botão
-				if (isOpening) {
-					this.innerText = "Conectando...";
-					this.disabled = true;
-				}
+                // Quando for abrir o túnel, exibe "Conectando..." no botão
+                if (isOpening) {
+                    this.innerText = "Conectando...";
+                    this.disabled = true;
+                }
 
-				fetch(url, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-CSRF-TOKEN': '{{ csrf_token() }}'
-					},
-					body: JSON.stringify({ service_port: servicePort })
-				})
-				.then(response => response.json())
-				.then(data => {
-					console.log('Resposta do servidor:', data); // Adicione este log para depuração
-					if (data.success) {
-						if (isOpening) {
-							const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
-							
-							if (randomPortInput) {
-								randomPortInput.value = data.server_port;  // Atualiza o campo com a porta aleatória
-							}
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ service_port: servicePort })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
+                        
+                        if (randomPortInput) {
+                            randomPortInput.value = data.server_port;  // Atualiza o campo com a porta aleatória
+                        }
 
-							if (data.status === 'pending') {
-								this.innerText = "Conectando...";
-								this.disabled = true;
-							} else if (data.status === 'in_progress') {
-								this.innerText = "Fechar Túnel";
-								this.setAttribute('data-open', 'false');
-								this.disabled = false;
-								this.classList.remove('bg-blue-500');
-								this.classList.add('bg-red-500');
-							}
-						} else {
-							this.innerText = "Abrir Túnel";
-							this.setAttribute('data-open', 'true');
-							this.classList.remove('bg-red-500');
-							this.classList.add('bg-blue-500');
-						}
-					} else {
-						alert('Erro ao executar a ação: ' + data.message);
-						this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
-						this.disabled = false;
-					}
-				})
-				.catch(error => {
-					console.error('Erro:', error);
-					alert('Ocorreu um erro ao tentar abrir o túnel. Verifique o console para mais detalhes.');
-					this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
-					this.disabled = false;
-				});
-			});
-		});
-
-
+                        if (data.status === 'pending') {
+                            this.innerText = "Conectando...";
+                            this.disabled = true;
+                        } else if (data.status === 'in_progress') {
+                            this.innerText = "Fechar Túnel";
+                            this.setAttribute('data-open', 'false');
+                            this.disabled = false;
+                            this.classList.remove('bg-blue-500');
+                            this.classList.add('bg-red-500');
+                        } else {
+                            this.innerText = "Abrir Túnel";
+                            this.setAttribute('data-open', 'true');
+                            this.classList.remove('bg-red-500');
+                            this.classList.add('bg-blue-500');
+                        }
+                    } else {
+                        alert('Erro ao executar a ação: ' + data.message);
+                        this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+                        this.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    alert('Ocorreu um erro ao tentar abrir o túnel.');
+                    this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+                    this.disabled = false;
+                });
+            });
+        });
 
         function addEscListener() {
             document.addEventListener('keydown', escFunction);
@@ -406,5 +410,4 @@
         }
     </script>
 </x-app-layout>
-
 
