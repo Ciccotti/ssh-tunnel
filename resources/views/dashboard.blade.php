@@ -328,70 +328,117 @@
             }
         }
 
-        document.querySelectorAll('.toggle-tunnel-btn').forEach(button => {
-            button.addEventListener('click', function () {
-                const machineId = this.getAttribute('data-machine-id');
-                const servicePort = document.querySelector(`input[name="service_port"][data-machine-id="${machineId}"]`).value;
-                const isOpening = this.getAttribute('data-open') === 'true';
+		document.querySelectorAll('.toggle-tunnel-btn').forEach(button => {
+			button.addEventListener('click', function () {
+				const machineId = this.getAttribute('data-machine-id');
+				const isOpening = this.getAttribute('data-open') === 'true';
+				let servicePort = '';
 
-                if (!servicePort) {
-                    alert("Por favor, insira a porta do cliente.");
-                    return;
-                }
+				// Se for abrir o túnel, validamos a porta do cliente
+				if (isOpening) {
+					servicePort = document.querySelector(`input[name="service_port"][data-machine-id="${machineId}"]`).value;
 
-                const url = isOpening ? `/machines/${machineId}/open-tunnel` : `/machines/${machineId}/close-tunnel`;
+					if (!servicePort) {
+						alert("Por favor, insira a porta do cliente.");
+						return;
+					}
+				}
 
-                // Quando for abrir o túnel, exibe "Conectando..." no botão
-                if (isOpening) {
-                    this.innerText = "Conectando...";
-                    this.disabled = true;
-                }
+				const url = isOpening ? `/machines/${machineId}/open-tunnel` : `/machines/${machineId}/close-tunnel`;
 
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({ service_port: servicePort })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
-                        
-                        if (randomPortInput) {
-                            randomPortInput.value = data.server_port;  // Atualiza o campo com a porta aleatória
-                        }
+				// Exibe "Conectando..." ao abrir o túnel
+				if (isOpening) {
+					this.innerText = "Conectando...";
+					this.disabled = true;
+				}
 
-                        if (data.status === 'pending') {
-                            this.innerText = "Conectando...";
-                            this.disabled = true;
-                        } else if (data.status === 'in_progress') {
-                            this.innerText = "Fechar Túnel";
-                            this.setAttribute('data-open', 'false');
-                            this.disabled = false;
-                            this.classList.remove('bg-blue-500');
-                            this.classList.add('bg-red-500');
-                        } else {
-                            this.innerText = "Abrir Túnel";
-                            this.setAttribute('data-open', 'true');
-                            this.classList.remove('bg-red-500');
-                            this.classList.add('bg-blue-500');
-                        }
-                    } else {
-                        alert('Erro ao executar a ação: ' + data.message);
-                        this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
-                        this.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    alert('Ocorreu um erro ao tentar abrir o túnel.');
-                    this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
-                    this.disabled = false;
-                });
-            });
-        });
+				fetch(url, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRF-TOKEN': '{{ csrf_token() }}'
+					},
+					body: JSON.stringify({ service_port: servicePort })
+				})
+				.then(response => response.json())
+				.then(data => {
+					console.log('Resposta do servidor:', data); // Para depuração
+
+					if (data.success) {
+						const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
+
+						if (randomPortInput && data.server_port) {
+							randomPortInput.value = data.server_port;  // Atualiza o campo com a porta aleatória
+						}
+
+						// Verifica o status retornado para definir o estado do botão
+						if (isOpening && data.status === 'in_progress') {
+							this.innerText = "Fechar Túnel";
+							this.setAttribute('data-open', 'false');
+							this.disabled = false;
+							this.classList.remove('bg-blue-500');
+							this.classList.add('bg-red-500');
+						} else if (!isOpening) {
+							this.innerText = "Abrir Túnel";
+							this.setAttribute('data-open', 'true');
+							this.classList.remove('bg-red-500');
+							this.classList.add('bg-blue-500');
+						}
+					} else {
+						alert('Erro ao executar a ação: ' + data.message);
+						this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+						this.disabled = false;
+					}
+				})
+				.catch(error => {
+					console.error('Erro:', error);
+					alert('Ocorreu um erro ao tentar abrir o túnel. Verifique o console para mais detalhes.');
+					this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+					this.disabled = false;
+				});
+			});
+		});
+
+		// Função para verificar o status do túnel periodicamente e atualizar a interface
+		function checkTunnelStatus(machineId, button) {
+			fetch(`/machines/${machineId}/tunnel-status`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': '{{ csrf_token() }}'
+				}
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.status === 'in_progress') {
+					button.innerText = "Fechar Túnel";
+					button.setAttribute('data-open', 'false');
+					button.disabled = false;
+					button.classList.remove('bg-blue-500');
+					button.classList.add('bg-red-500');
+				} else if (data.status === 'pending') {
+					button.innerText = "Conectando...";
+					button.disabled = true;
+				} else {
+					button.innerText = "Abrir Túnel";
+					button.setAttribute('data-open', 'true');
+					button.classList.remove('bg-red-500');
+					button.classList.add('bg-blue-500');
+					button.disabled = false;
+				}
+			})
+			.catch(error => {
+				console.error('Erro ao verificar o status do túnel:', error);
+			});
+		}
+
+		// Inicializa a verificação do status para cada máquina
+		document.querySelectorAll('.toggle-tunnel-btn').forEach(button => {
+			const machineId = button.getAttribute('data-machine-id');
+			// Verifica o status a cada 5 segundos
+			setInterval(() => checkTunnelStatus(machineId, button), 5000);
+		});
+
 
         function addEscListener() {
             document.addEventListener('keydown', escFunction);

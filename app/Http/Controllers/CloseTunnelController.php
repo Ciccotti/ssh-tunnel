@@ -11,9 +11,9 @@ class CloseTunnelController extends Controller
 {
     public function close(Request $request, $machineId)
     {
-        // Carregar a última requisição de conexão para a máquina especificada
+        // Carrega a última requisição de conexão para a máquina especificada que está "in_progress"
         $connectionRequest = ConnectionRequest::where('machine_id', $machineId)
-            ->where('status', 'in_progress')
+            ->where('status', 'in_progress') // Apenas conexões com status "in_progress"
             ->latest()
             ->first();
 

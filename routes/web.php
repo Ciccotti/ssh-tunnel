@@ -49,4 +49,7 @@ Route::middleware([
 
     // Rota para verificar o status do túnel de uma máquina
     Route::get('/machines/{machine}/tunnel-status', [OpenTunnelController::class, 'getTunnelStatus'])->name('machines.tunnel-status');
+    
+    Route::get('/machines/{machine}/check-tunnel', [OpenTunnelController::class, 'checkAndSetInProgress'])->name('machines.check-tunnel');
+
 });
