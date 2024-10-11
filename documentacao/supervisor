@@ -1,0 +1,21 @@
+INSTALAÇÃO E CONFIGURAÇÃO DO 'SUPERVISOR', SOFTWARE QUE GERENCIA O MONITOR DE TÚNEIS
+
+
+sudo apt-get install supervisor
+
+[program:monitor_tunnels]
+command=/usr/bin/php /var/www/laravel_project/ssh-tunel/scripts/monitor_tunnels.php
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/monitor_tunnels.err.log
+stdout_logfile=/var/log/monitor_tunnels.out.log
+user=root    ; ou o usuário correto do sistema, por exemplo, "nginx" ou "www-data"
+
+sudo supervisorctl reread
+sudo supervisorctl update
+
+sudo supervisorctl status monitor_tunnels
+
+sudo supervisorctl stop monitor_tunnels
+sudo supervisorctl start monitor_tunnels
+
