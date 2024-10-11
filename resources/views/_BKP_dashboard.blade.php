@@ -5,6 +5,30 @@
         </h2>
     </x-slot>
 
+    <!-- Exibe mensagens de sucesso ou erro -->
+    @if (session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <span class="block sm:inline">{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <span class="block sm:inline">{{ session('error') }}</span>
+        </div>
+    @endif
+
+    <!-- Exibe erros de validação -->
+    @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <ul class="list-disc pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
@@ -32,19 +56,39 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($client->machines as $machine)
+                                        @php
+                                            $connectionRequest = $machine->connectionRequests()->latest()->first();
+                                            $isPending = $connectionRequest && $connectionRequest->status === 'pending';
+                                            $isInProgress = $connectionRequest && $connectionRequest->status === 'in_progress';
+                                        @endphp
                                         <tr>
                                             <td class="border px-4 py-2 text-gray-800">{{ $machine->name }}</td>
                                             <td class="border px-4 py-2 text-gray-800">{{ $machine->specifications }}</td>
                                             <td class="border px-4 py-2 text-gray-800">
-                                                <input type="number" name="service" class="form-control w-full border rounded-lg p-2" placeholder="Porta do cliente que deseja utilizar">
+                                                <input type="number" name="service_port" class="service-port form-control w-full border rounded-lg p-2" placeholder="Porta do cliente" data-machine-id="{{ $machine->id }}">
                                             </td>
                                             <td class="border px-4 py-2 text-gray-800">
-                                                <input type="number" name="random_port" class="form-control w-full border rounded-lg p-2" value="" placeholder="Porta para conectar no cliente" disabled>
+                                                <input type="number" class="random-port form-control w-full border rounded-lg p-2" value="{{ $machine->random_port ?? '' }}" placeholder="Porta para conectar" data-machine-id="{{ $machine->id }}" disabled>
                                             </td>
+
                                             <td class="border px-4 py-2">
-                                                <button class="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700">
-                                                    Abrir Túnel
-                                                </button>
+                                                @if ($isPending)
+                                                    <button class="bg-gray-400 text-black px-4 py-2 rounded" disabled>
+                                                        Conectando...
+                                                    </button>
+                                                @elseif ($isInProgress)
+                                                    <button class="toggle-tunnel-btn bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700" 
+                                                            data-machine-id="{{ $machine->id }}" 
+                                                            data-open="false">
+                                                        Fechar Túnel
+                                                    </button>
+                                                @else
+                                                    <button class="toggle-tunnel-btn bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700" 
+                                                            data-machine-id="{{ $machine->id }}" 
+                                                            data-open="true">
+                                                        Abrir Túnel
+                                                    </button>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
@@ -62,7 +106,7 @@
                     <button class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700" onclick="showMachineModal()">
                         Cadastrar Máquina
                     </button>
-                    <button class="bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700" onclick="showDeleteModal()">
+                    <button class="bg-red-500 text-red-700 px-4 py-2 rounded hover:bg-red-700" onclick="showDeleteModal()">
                         Excluir Cliente/Máquina
                     </button>
                 </div>
@@ -84,7 +128,7 @@
                     <button type="button" onclick="hideClientModal()" class="bg-gray-400 text-black px-4 py-2 rounded mr-2">
                         Cancelar
                     </button>
-                    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded">
+                    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700">
                         Salvar
                     </button>
                 </div>
@@ -123,7 +167,7 @@
                     <button type="button" onclick="hideMachineModal()" class="bg-gray-400 text-black px-4 py-2 rounded mr-2">
                         Cancelar
                     </button>
-                    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded">
+                    <button type="submit" class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700">
                         Salvar
                     </button>
                 </div>
@@ -151,7 +195,7 @@
                         <option value="{{ $client->id }}">{{ $client->name }}</option>
                     @endforeach
                 </select>
-                <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteClient()">
+                <button class="bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteClient()">
                     Excluir Cliente
                 </button>
             </div>
@@ -167,7 +211,7 @@
                 <select id="deleteMachineSelect" class="form-control w-full border rounded-lg p-2 mt-2" disabled>
                     <option value="">Selecione uma Máquina</option>
                 </select>
-                <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteMachine()">
+                <button class="bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700 mt-4" onclick="deleteMachine()">
                     Excluir Máquina
                 </button>
             </div>
@@ -182,38 +226,32 @@
     <script>
         function showClientModal() {
             document.getElementById('clientModal').style.display = 'flex';
-            addEscListener(); // Adiciona o listener para fechar com ESC
+            addEscListener();
         }
+
         function hideClientModal() {
             document.getElementById('clientModal').style.display = 'none';
-            removeEscListener(); // Remove o listener quando o modal é fechado
+            removeEscListener();
         }
 
         function showMachineModal() {
             document.getElementById('machineModal').style.display = 'flex';
-            addEscListener(); // Adiciona o listener para fechar com ESC
+            addEscListener();
         }
+
         function hideMachineModal() {
             document.getElementById('machineModal').style.display = 'none';
-            removeEscListener(); // Remove o listener quando o modal é fechado
+            removeEscListener();
         }
 
         function showDeleteModal() {
             document.getElementById('deleteModal').style.display = 'flex';
-            addEscListener(); // Adiciona o listener para fechar com ESC
-        }
-        function hideDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-            removeEscListener(); // Remove o listener quando o modal é fechado
+            addEscListener();
         }
 
-        function toggleDropdown(clientId) {
-            var dropdown = document.getElementById('dropdown-' + clientId);
-            if (dropdown.classList.contains('hidden')) {
-                dropdown.classList.remove('hidden');
-            } else {
-                dropdown.classList.add('hidden');
-            }
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            removeEscListener();
         }
 
         function showDeleteClientOptions() {
@@ -226,10 +264,15 @@
             document.getElementById('deleteClientOptions').classList.add('hidden');
         }
 
+        function toggleDropdown(clientId) {
+            var dropdown = document.getElementById('dropdown-' + clientId);
+            dropdown.classList.toggle('hidden');
+        }
+
         function loadMachines(clientId) {
             var machineSelect = document.getElementById('deleteMachineSelect');
             machineSelect.disabled = false;
-            machineSelect.innerHTML = ''; // Limpa as máquinas anteriores
+            machineSelect.innerHTML = '';
 
             @foreach ($clients as $client)
                 if (clientId == {{ $client->id }}) {
@@ -285,7 +328,118 @@
             }
         }
 
-        // Funções para adicionar e remover o listener do ESC
+		document.querySelectorAll('.toggle-tunnel-btn').forEach(button => {
+			button.addEventListener('click', function () {
+				const machineId = this.getAttribute('data-machine-id');
+				const isOpening = this.getAttribute('data-open') === 'true';
+				let servicePort = '';
+
+				// Se for abrir o túnel, validamos a porta do cliente
+				if (isOpening) {
+					servicePort = document.querySelector(`input[name="service_port"][data-machine-id="${machineId}"]`).value;
+
+					if (!servicePort) {
+						alert("Por favor, insira a porta do cliente.");
+						return;
+					}
+				}
+
+				const url = isOpening ? `/machines/${machineId}/open-tunnel` : `/machines/${machineId}/close-tunnel`;
+
+				// Exibe "Conectando..." ao abrir o túnel
+				if (isOpening) {
+					this.innerText = "Conectando...";
+					this.disabled = true;
+				}
+
+				fetch(url, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRF-TOKEN': '{{ csrf_token() }}'
+					},
+					body: JSON.stringify({ service_port: servicePort })
+				})
+				.then(response => response.json())
+				.then(data => {
+					console.log('Resposta do servidor:', data); // Para depuração
+
+					if (data.success) {
+						const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
+
+						if (randomPortInput && data.server_port) {
+							randomPortInput.value = data.server_port;  // Atualiza o campo com a porta aleatória
+						}
+
+						// Verifica o status retornado para definir o estado do botão
+						if (isOpening && data.status === 'in_progress') {
+							this.innerText = "Fechar Túnel";
+							this.setAttribute('data-open', 'false');
+							this.disabled = false;
+							this.classList.remove('bg-blue-500');
+							this.classList.add('bg-red-500');
+						} else if (!isOpening) {
+							this.innerText = "Abrir Túnel";
+							this.setAttribute('data-open', 'true');
+							this.classList.remove('bg-red-500');
+							this.classList.add('bg-blue-500');
+						}
+					} else {
+						alert('Erro ao executar a ação: ' + data.message);
+						this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+						this.disabled = false;
+					}
+				})
+				.catch(error => {
+					console.error('Erro:', error);
+					alert('Ocorreu um erro ao tentar abrir o túnel. Verifique o console para mais detalhes.');
+					this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+					this.disabled = false;
+				});
+			});
+		});
+
+		// Função para verificar o status do túnel periodicamente e atualizar a interface
+		function checkTunnelStatus(machineId, button) {
+			fetch(`/machines/${machineId}/tunnel-status`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': '{{ csrf_token() }}'
+				}
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.status === 'in_progress') {
+					button.innerText = "Fechar Túnel";
+					button.setAttribute('data-open', 'false');
+					button.disabled = false;
+					button.classList.remove('bg-blue-500');
+					button.classList.add('bg-red-500');
+				} else if (data.status === 'pending') {
+					button.innerText = "Conectando...";
+					button.disabled = true;
+				} else {
+					button.innerText = "Abrir Túnel";
+					button.setAttribute('data-open', 'true');
+					button.classList.remove('bg-red-500');
+					button.classList.add('bg-blue-500');
+					button.disabled = false;
+				}
+			})
+			.catch(error => {
+				console.error('Erro ao verificar o status do túnel:', error);
+			});
+		}
+
+		// Inicializa a verificação do status para cada máquina
+		document.querySelectorAll('.toggle-tunnel-btn').forEach(button => {
+			const machineId = button.getAttribute('data-machine-id');
+			// Verifica o status a cada 5 segundos
+			setInterval(() => checkTunnelStatus(machineId, button), 5000);
+		});
+
+
         function addEscListener() {
             document.addEventListener('keydown', escFunction);
         }
@@ -294,7 +448,6 @@
             document.removeEventListener('keydown', escFunction);
         }
 
-        // Função que será chamada quando a tecla ESC for pressionada
         function escFunction(event) {
             if (event.key === 'Escape') {
                 hideClientModal();
@@ -304,4 +457,3 @@
         }
     </script>
 </x-app-layout>
-
