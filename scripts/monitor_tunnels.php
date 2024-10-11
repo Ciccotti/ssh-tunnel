@@ -77,7 +77,7 @@ function criarThread()
 
         if ($pid == -1) {
             Log::error("Erro ao criar thread. Tentando novamente em 5 segundos.");
-            sleep(5);
+            sleep(2);
         } elseif ($pid) {
             pcntl_wait($status); // Processo pai: espera o processo filho terminar
             Log::info("Thread finalizada. Reiniciando...");
@@ -85,7 +85,7 @@ function criarThread()
             try {
                 while (true) {
                     verificarTunnels(); // Executa a verificação dos túneis
-                    sleep(3); // Aguarda 3 segundos antes da próxima verificação
+                    sleep(2); // Aguarda 3 segundos antes da próxima verificação
                 }
             } catch (\Exception $e) {
                 Log::error("Erro no processo de monitoramento: " . $e->getMessage());

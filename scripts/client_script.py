@@ -1,69 +1,25 @@
 import os
 import platform
 import subprocess
-import uuid
 import requests
 import sys
+import time
+import threading
 
 # Configurações
-CHECK_TUNNEL_ENDPOINT = "http://195.200.5.90/api/check-tunnel-request"  # URL para verificar solicitações de túnel
-USERNAME_SSH = "sshuser"  # Usuário SSH para conexão
-SERVER_ADDRESS = "195.200.5.90"  # Endereço do servidor SSH
-
-# Caminho para a chave privada (ajustando para sistemas operacionais diferentes)
+CHECK_TUNNEL_ENDPOINT = "http://195.200.5.90/api/check-tunnel-request"
+USERNAME_SSH = "sshuser"
+SERVER_ADDRESS = "195.200.5.90"
 PRIVATE_KEY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chave_ssh")
+HARDWARE_ID = "210382059501216"  # Pode ser gerado dinamicamente
 
-def adjust_key_permissions():
-    system = platform.system()
-    if system == "Windows":
-        # No Windows, ajustar permissões com icacls
-        try:
-            result = subprocess.run([
-                'icacls', PRIVATE_KEY_PATH, '/inheritance:r',
-                '/grant:r', f'{os.getlogin()}:(R)'
-            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            
-            print("Permissões ajustadas com sucesso no Windows.")
-            print(result.stdout)  # Exibe a saída do comando
-        except Exception as e:
-            print(f"Erro ao ajustar permissões no Windows: {e}")
-            sys.exit(1)
-    elif system in ["Linux", "Darwin"]:  # Para Linux e macOS
-        try:
-            # Ajustar permissões para 600 no Linux/macOS
-            os.chmod(PRIVATE_KEY_PATH, 0o600)
-            print("Permissões ajustadas com sucesso no Linux/macOS.")
-        except Exception as e:
-            print(f"Erro ao ajustar permissões no Linux/macOS: {e}")
-            sys.exit(1)
-    else:
-        print(f"Sistema operacional {system} não suportado para ajuste automático de permissões.")
-        sys.exit(1)
-
-def get_hardware_id():
-    system = platform.system()
-    if system == "Windows":
-        try:
-            import wmi
-            c = wmi.WMI()
-            motherboard = c.Win32_BaseBoard()[0]
-            return motherboard.SerialNumber.strip()
-        except ImportError:
-            print("A biblioteca 'WMI' é necessária no Windows. Instale-a com 'pip install WMI'.")
-            sys.exit(1)
-    elif system == "Linux":
-        return str(uuid.getnode())  # Obtém o MAC address
-    else:
-        return str(uuid.getnode())
-
-def check_tunnel_request(hardware_id):
+def check_tunnel_request():
     data = {
-        "hardware_id": hardware_id
+        "hardware_id": HARDWARE_ID
     }
     try:
         response = requests.post(CHECK_TUNNEL_ENDPOINT, json=data, timeout=10)
-        print("Resposta do servidor web:", response.text)  # Exibir resposta no terminal
-
+        print("Resposta do servidor web:", response.text)
         if response.status_code == 200:
             data = response.json()
             if data.get("success") and data.get("status") == "pending":
@@ -79,30 +35,21 @@ def check_tunnel_request(hardware_id):
         return None
 
 def establish_ssh_tunnel(server_port, service_port):
-    print(f"Iniciando tentativa de conexão SSH...")
-    print(f"Comando de SSH sendo executado: -i {PRIVATE_KEY_PATH} -R {server_port}:localhost:{service_port} {USERNAME_SSH}@{SERVER_ADDRESS}")
-    
-    # Construir o comando SSH para redirecionar a porta
+    print(f"Iniciando tentativa de conexão SSH na porta {server_port} para o serviço {service_port}...")
     ssh_command = [
         "ssh",
         "-i", PRIVATE_KEY_PATH,
-        "-o", "BatchMode=yes",  # Desabilita solicitação de senha
+        "-o", "BatchMode=yes",
         "-R", f"{server_port}:localhost:{service_port}",
         f"{USERNAME_SSH}@{SERVER_ADDRESS}",
         "-N"
     ]
     
-    # Executar o comando no terminal
     try:
         result = subprocess.run(ssh_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        # Exibir saída e erro do comando SSH
-        print("Saída do comando SSH:")
-        print(result.stdout)
-        print("Erros do comando SSH:")
-        print(result.stderr)
+        print("Saída do comando SSH:", result.stdout)
+        print("Erros do comando SSH:", result.stderr)
 
-        # Verificar se o túnel SSH foi estabelecido com sucesso
         if result.returncode == 0:
             print(f"Túnel SSH estabelecido: localhost:{server_port} -> {SERVER_ADDRESS}:{service_port}")
         else:
@@ -110,34 +57,23 @@ def establish_ssh_tunnel(server_port, service_port):
     except Exception as e:
         print(f"Erro ao tentar estabelecer o túnel SSH: {e}")
 
+def verificar_e_abrir_tunel():
+    tunnel_info = check_tunnel_request()
+    if tunnel_info:
+        server_port = tunnel_info.get("server_port")
+        service_port = tunnel_info.get("service_port")
+        
+        if server_port and service_port:
+            # Abrir o túnel em uma nova thread
+            threading.Thread(target=establish_ssh_tunnel, args=(server_port, service_port)).start()
+        else:
+            print("Erro: As portas 'server_port' e 'service_port' não foram fornecidas.")
+
 def main():
-    # Verificar se a chave existe antes de tentar qualquer operação
-    if not os.path.isfile(PRIVATE_KEY_PATH):
-        print(f"Chave privada não encontrada: {PRIVATE_KEY_PATH}")
-        sys.exit(1)
-
-    # Ajustar permissões da chave privada antes de tentar o SSH
-    adjust_key_permissions()
-
-    hardware_id = get_hardware_id()
-    print(f"Hardware ID: {hardware_id}")
-    
-    # Verificar solicitações de túnel no servidor
-    tunnel_info = check_tunnel_request(hardware_id)
-    if not tunnel_info:
-        print("Nenhuma conexão pendente ou resposta inválida do servidor.")
-        sys.exit(0)
-    
-    # Verificar se as portas estão presentes na resposta
-    server_port = tunnel_info.get("server_port")
-    service_port = tunnel_info.get("service_port")
-    
-    if server_port and service_port:
-        # Estabelecer túnel SSH
-        establish_ssh_tunnel(server_port, service_port)
-    else:
-        print("Erro: As portas 'server_port' e 'service_port' não foram fornecidas.")
-        sys.exit(1)
+    while True:
+        verificar_e_abrir_tunel()
+        time.sleep(5)
 
 if __name__ == "__main__":
     main()
+
