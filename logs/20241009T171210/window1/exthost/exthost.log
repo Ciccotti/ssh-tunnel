@@ -1,0 +1,125 @@
+2024-10-09 17:12:18.172 [info] Extension host with pid 882127 started
+2024-10-09 17:12:18.172 [info] Skipping acquiring lock for /var/www/laravel_project/ssh-tunel/User/workspaceStorage/52f183a1670ddde9c5287066af72e54c.
+2024-10-09 17:12:18.350 [info] ExtensionService#_doActivateExtension vscode.git-base, startup: true, activationEvent: '*'
+2024-10-09 17:12:18.382 [info] ExtensionService#_doActivateExtension vscode.npm, startup: true, activationEvent: 'workspaceContains:package.json'
+2024-10-09 17:12:18.595 [info] ExtensionService#_doActivateExtension vscode.github, startup: true, activationEvent: '*'
+2024-10-09 17:12:18.753 [info] Eager extensions activated
+2024-10-09 17:12:18.759 [info] ExtensionService#_doActivateExtension vscode.debug-auto-launch, startup: false, activationEvent: 'onStartupFinished'
+2024-10-09 17:12:18.766 [info] ExtensionService#_doActivateExtension vscode.merge-conflict, startup: false, activationEvent: 'onStartupFinished'
+2024-10-09 17:12:23.725 [info] ExtensionService#_doActivateExtension vscode.configuration-editing, startup: false, activationEvent: 'onLanguage:json'
+2024-10-09 17:12:23.743 [info] ExtensionService#_doActivateExtension vscode.extension-editing, startup: false, activationEvent: 'onLanguage:json'
+2024-10-09 17:12:23.765 [info] ExtensionService#_doActivateExtension vscode.json-language-features, startup: false, activationEvent: 'onLanguage:json'
+2024-10-09 17:12:23.857 [info] ExtensionService#_doActivateExtension vscode.emmet, startup: false, activationEvent: 'onLanguage'
+2024-10-09 17:12:24.121 [info] ExtensionService#_doActivateExtension vscode.git, startup: false, activationEvent: 'api', root cause: vscode.github
+2024-10-09 17:12:25.266 [info] ExtensionService#_doActivateExtension vscode.github-authentication, startup: false, activationEvent: 'onAuthenticationRequest:github'
+2024-10-09 17:12:33.745 [warning] [Decorations] CAPPING events from decorations provider vscode.git 264
+2024-10-09 17:12:36.103 [info] ExtensionService#_doActivateExtension vscode.php-language-features, startup: false, activationEvent: 'onLanguage:php'
+2024-10-09 17:12:46.310 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:12:51.360 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:12:56.424 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:13:01.506 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:13:06.550 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:13:11.655 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:13:16.730 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:13:21.776 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:13:26.828 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:13:31.883 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:13:36.931 [warning] [Decorations] CAPPING events from decorations provider vscode.git 303
+2024-10-09 17:13:39.671 [info] ExtensionService#_doActivateExtension vscode.typescript-language-features, startup: false, activationEvent: 'onLanguage:javascript'
+2024-10-09 17:13:42.132 [warning] [Decorations] CAPPING events from decorations provider vscode.git 304
+2024-10-09 17:13:47.210 [warning] [Decorations] CAPPING events from decorations provider vscode.git 304
+2024-10-09 17:13:52.262 [warning] [Decorations] CAPPING events from decorations provider vscode.git 305
+2024-10-09 17:13:57.303 [warning] [Decorations] CAPPING events from decorations provider vscode.git 305
+2024-10-09 17:14:02.397 [warning] [Decorations] CAPPING events from decorations provider vscode.git 305
+2024-10-09 17:14:07.501 [warning] [Decorations] CAPPING events from decorations provider vscode.git 305
+2024-10-09 17:14:12.560 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:14:17.603 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:14:22.646 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:14:27.693 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:14:32.742 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:14:37.791 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:14:42.835 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:14:47.913 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:14:52.962 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:14:58.020 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:15:03.089 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:15:08.185 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:15:13.238 [warning] [Decorations] CAPPING events from decorations provider vscode.git 306
+2024-10-09 17:15:57.601 [info] Extension host terminating: renderer closed the MessagePort
+2024-10-09 17:15:57.684 [error] Canceled: Canceled
+	at new D (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:151:35235)
+	at y.U (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:158:6005)
+	at V.<computed>.F.charCodeAt.A.CharCode.DollarSign.V.<computed> (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:158:3107)
+	at h.g (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:210015)
+	at h.executeCommand (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:209453)
+	at C.registerCommand.description (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:208777)
+	at h (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:210554)
+	at h.g (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:209546)
+	at h.executeCommand (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:209453)
+	at Object.executeCommand (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:171:30683)
+	at i.O [as value] (/usr/share/code/resources/app/extensions/git/dist/main.js:2:952009)
+	at r.B (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:90:732)
+	at r.C (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:90:802)
+	at r.fire (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:90:1018)
+	at Object.p [as dispose] (/usr/share/code/resources/app/extensions/git/dist/main.js:2:972587)
+	at /usr/share/code/resources/app/extensions/git/dist/main.js:2:978709
+	at Array.forEach (<anonymous>)
+	at f.dispose (/usr/share/code/resources/app/extensions/git/dist/main.js:2:978695)
+	at o.<anonymous> (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:159:4176)
+	at o.dispose (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:159:4273)
+	at o.<anonymous> (/usr/share/code/resources/app/extensions/git/dist/main.js:2:954307)
+	at o.dispose (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:159:4273)
+	at $ (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:30:744)
+	at /usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:13607
+	at /usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:30:1112
+	at Object.dispose (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:11:11463)
+	at m.eb (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:10282)
+	at /usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:8153
+	at Array.map (<anonymous>)
+	at m.$ (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:8140)
+	at m.terminate (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:8413)
+	at $.terminate (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:171:1513)
+	at n (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:184:10613)
+	at MessagePortMain.<anonymous> (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:184:6805)
+	at MessagePortMain.emit (node:events:519:28)
+	at MessagePortMain._internalPort.emit (node:electron/js2c/utility_init:2:2619) setContext undefined
+2024-10-09 17:15:57.687 [error] Canceled: Canceled
+	at new D (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:151:35235)
+	at y.U (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:158:6005)
+	at V.<computed>.F.charCodeAt.A.CharCode.DollarSign.V.<computed> (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:158:3107)
+	at h.g (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:210015)
+	at h.executeCommand (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:209453)
+	at C.registerCommand.description (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:208777)
+	at h (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:210554)
+	at h.g (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:209546)
+	at h.executeCommand (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:161:209453)
+	at Object.executeCommand (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:171:30683)
+	at set hasGitHubRepositories (/usr/share/code/resources/app/extensions/github/dist/extension.js:2:322969)
+	at /usr/share/code/resources/app/extensions/github/dist/extension.js:2:323928
+	at i.value (/usr/share/code/resources/app/extensions/git/dist/main.js:2:1060944)
+	at r.B (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:90:732)
+	at r.C (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:90:802)
+	at r.fire (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:90:1018)
+	at Object.p [as dispose] (/usr/share/code/resources/app/extensions/git/dist/main.js:2:972587)
+	at /usr/share/code/resources/app/extensions/git/dist/main.js:2:978709
+	at Array.forEach (<anonymous>)
+	at f.dispose (/usr/share/code/resources/app/extensions/git/dist/main.js:2:978695)
+	at o.<anonymous> (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:159:4176)
+	at o.dispose (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:159:4273)
+	at o.<anonymous> (/usr/share/code/resources/app/extensions/git/dist/main.js:2:954307)
+	at o.dispose (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:159:4273)
+	at $ (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:30:744)
+	at /usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:13607
+	at /usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:30:1112
+	at Object.dispose (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:11:11463)
+	at m.eb (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:10282)
+	at /usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:8153
+	at Array.map (<anonymous>)
+	at m.$ (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:8140)
+	at m.terminate (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:167:8413)
+	at $.terminate (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:171:1513)
+	at n (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:184:10613)
+	at MessagePortMain.<anonymous> (/usr/share/code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:184:6805)
+	at MessagePortMain.emit (node:events:519:28)
+	at MessagePortMain._internalPort.emit (node:electron/js2c/utility_init:2:2619) setContext undefined
+2024-10-09 17:15:57.690 [info] Extension host with pid 882127 exiting with code 0
