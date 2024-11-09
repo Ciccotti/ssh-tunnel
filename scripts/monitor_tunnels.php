@@ -85,7 +85,7 @@ function criarThread()
             try {
                 while (true) {
                     verificarTunnels(); // Executa a verificação dos túneis
-                    sleep(2); // Aguarda 3 segundos antes da próxima verificação
+                    sleep(2); // Aguarda 2 segundos antes da próxima verificação
                 }
             } catch (\Exception $e) {
                 Log::error("Erro no processo de monitoramento: " . $e->getMessage());
