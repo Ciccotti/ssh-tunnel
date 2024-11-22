@@ -1,7 +1,7 @@
 
 # Solução de Acesso Remoto a Redes Privadas Utilizando Túnel SSH Reverso
 
-Este repositório apresenta uma solução de TCC desenvolvida na **Universidade Federal de Uberlândia (UFU)** para acesso remoto seguro a redes privadas, utilizando túneis SSH reversos. Este projeto, de autoria de **Matheus Lopes Ciccotti** sob a orientação do Dr. Diego Nunes Molinos, visa resolver desafios de segurança e acessibilidade em redes corporativas com restrições de firewall e NAT.
+Este repositório apresenta uma solução de TCC desenvolvida na **Universidade Federal de Uberlândia (UFU)** para acesso remoto seguro a redes privadas, utilizando túneis SSH reversos.
 
 ## Visão Geral do Projeto
 
