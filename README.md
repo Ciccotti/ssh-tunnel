@@ -7,7 +7,7 @@ Este repositório apresenta uma solução de TCC desenvolvida na **Universidade 
 
 O projeto implementa uma aplicação web para gerenciamento de túneis SSH reversos, permitindo que usuários autenticados possam abrir e fechar conexões seguras com máquinas clientes (Windows ou Linux), mesmo em redes protegidas. A aplicação foi desenvolvida em Laravel, e o script do cliente em Python consulta um endpoint para verificar solicitações de conexão pendentes, estabelecendo o túnel reverso para a interface web.
 
-### Diagrama da Arquitetura:
+### Ilustração da Solução:
 
                                  +----------------+
                                  |     Usuário    |
