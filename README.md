@@ -7,6 +7,44 @@ Este repositório apresenta uma solução de TCC desenvolvida na **Universidade 
 
 O projeto implementa uma aplicação web para gerenciamento de túneis SSH reversos, permitindo que usuários autenticados possam abrir e fechar conexões seguras com máquinas clientes (Windows ou Linux), mesmo em redes protegidas. A aplicação foi desenvolvida em Laravel, e o script do cliente em Python consulta um endpoint para verificar solicitações de conexão pendentes, estabelecendo o túnel reverso para a interface web.
 
+### Diagrama da Arquitetura:
+
+                                 +----------------+
+                                 |     Usuário    |
+                                 |                |
+                                 +----------------+
+                                         |
+                                         |
+                                Acesso via web (site)
+                                         |
+                                         |
+                                         v
+                           +---------------------------+
+                           |        Servidor Web       |
+                           |                           |
+                           | (Painel de gerenciamento) |
+                           |                           |
+                           | Linux, Laravel, PHP,      |
+                           | Nginx e SSH               |
+                           +---------------------------+
+                              ^                 ^
+                              |                 |
+                              |                 |
+                              |                 |
+                              Túneis SSH Reversos
+                              |                 |
+                              |                 |
+                              |                 |
+                              |                 |
+                  +-------------------+   +-------------------+
+                  |    Cliente 1      |   |     Cliente 2     |
+                  |                   |   |                   |
+                  |(Atrás de firewall)|   |(Atrás de firewall)|
+                  |                   |   |                   |
+                  |    Rodando RDP    |   |  Rodando Cockpit  |
+                  |   na porta 3389   |   |   na porta 9090   |
+                  +-------------------+   +-------------------+
+
 ## Estrutura do Repositório
 
 - **scripts/script_cliente.py**: Script Python para execução nas máquinas clientes, que monitora o servidor em busca de solicitações de túnel e, caso existam, estabelece o túnel SSH reverso.
