@@ -92,20 +92,41 @@ class OpenTunnelController extends Controller
 
     private function generateRandomPort()
     {
-        return rand(40000, 60000);
+        // random_int() utiliza fonte criptograficamente segura (CSPRNG),
+        // evitando a previsibilidade de rand()/mt_rand() na alocação de portas.
+        return random_int(40000, 60000);
     }
 
     // Função para verificar se a porta está em uso (ajustada para verificar dinamicamente)
     private function isPortInUse($port)
     {
-        $output = shell_exec("lsof -i :$port");
-        return !empty($output);
+        // Garante que a porta seja um inteiro válido antes de executar o processo.
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            return false;
+        }
+
+        // Usa Symfony Process com argumentos em array para evitar injeção de shell.
+        $process = new Process(['lsof', '-i', ':' . $port]);
+        $process->run();
+
+        return !empty(trim($process->getOutput()));
     }
 
     // Função para abrir a porta no firewall, agora permitindo apenas o IP externo do usuário
     private function openFirewallPort($port, $userIp)
     {
-        $process = new Process(['sudo', 'ufw', 'allow', 'from', $userIp, 'to', 'any', 'port', $port]);
+        // Validação defensiva: garante que o IP e a porta estejam em formato esperado
+        // antes de repassá-los ao processo (mesmo com array args, evita comportamento inesperado).
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            throw new \InvalidArgumentException("Porta inválida: {$port}");
+        }
+        if (!filter_var($userIp, FILTER_VALIDATE_IP)) {
+            throw new \InvalidArgumentException("Endereço IP inválido: {$userIp}");
+        }
+
+        $process = new Process(['sudo', 'ufw', 'allow', 'from', $userIp, 'to', 'any', 'port', (string) $port]);
         $process->run();
 
         if (!$process->isSuccessful()) {

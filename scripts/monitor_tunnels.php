@@ -8,21 +8,32 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-// Função para verificar se a porta está aberta usando netcat (nc)
+// Função para verificar se a porta está aberta usando uma conexão TCP direta.
 use Illuminate\Support\Facades\Log;
 use App\Models\ConnectionRequest;
 
 function isPortOpen($port)
 {
-    // Executa o comando netcat (nc) e captura tanto a saída padrão quanto a saída de erro
-    $command = "nc -zv localhost $port 2>&1"; // Adicionando verbose (-v) e capturando a saída de erro
-    $result = shell_exec($command);
-    
-    Log::info("Comando executado: $command");
-    Log::info("Resultado do comando nc para a porta $port: " . $result);
+    $port = (int) $port;
+    if ($port < 1 || $port > 65535) {
+        Log::warning("Porta fora do intervalo válido: {$port}");
+        return false;
+    }
 
-    // Verifica se a string "succeeded" está presente no resultado
-    return strpos($result, 'succeeded') !== false;
+    // Abre um socket TCP para localhost na porta informada com timeout curto.
+    // Evita shell_exec/injeção e remove a dependência externa do 'nc'.
+    $errno = 0;
+    $errstr = '';
+    $connection = @fsockopen('127.0.0.1', $port, $errno, $errstr, 2);
+
+    if (is_resource($connection)) {
+        fclose($connection);
+        Log::info("A porta {$port} está aberta (conexão TCP bem-sucedida).");
+        return true;
+    }
+
+    Log::info("A porta {$port} está fechada: [{$errno}] {$errstr}");
+    return false;
 }
 
 // Função para verificar e atualizar os túneis
