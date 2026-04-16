@@ -54,34 +54,57 @@ class CloseTunnelController extends Controller
 
     private function terminateProcessOnPort($port)
     {
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            throw new \InvalidArgumentException("Porta inválida: {$port}");
+        }
+
         Log::info("Tentando encerrar o processo na porta {$port}");
 
         $findProcess = new Process(['sudo', 'lsof', '-t', '-i', ':' . $port]);
         $findProcess->run();
 
-        if (!$findProcess->isSuccessful() || empty($findProcess->getOutput())) {
+        if (!$findProcess->isSuccessful() || empty(trim($findProcess->getOutput()))) {
             Log::info("Nenhum processo encontrado na porta {$port}. Prosseguindo para fechar a regra no firewall.");
             return;
         }
 
-        $pid = trim($findProcess->getOutput());
+        // A saída do lsof -t pode conter múltiplos PIDs. Filtra apenas números
+        // para evitar que conteúdo inesperado chegue ao comando kill.
+        $rawPids = preg_split('/\s+/', trim($findProcess->getOutput()));
+        $pids = array_filter($rawPids, fn ($pid) => ctype_digit($pid));
 
-        $killProcess = new Process(['sudo', 'kill', $pid]);
-        $killProcess->run();
-
-        if (!$killProcess->isSuccessful()) {
-            Log::error("Falha ao matar o processo {$pid} na porta {$port}: " . $killProcess->getErrorOutput());
-            throw new ProcessFailedException($killProcess);
+        if (empty($pids)) {
+            Log::info("Nenhum PID numérico válido retornado para a porta {$port}.");
+            return;
         }
 
-        Log::info("Processo {$pid} na porta {$port} foi encerrado com sucesso.");
+        foreach ($pids as $pid) {
+            $killProcess = new Process(['sudo', 'kill', (string) $pid]);
+            $killProcess->run();
+
+            if (!$killProcess->isSuccessful()) {
+                Log::error("Falha ao matar o processo {$pid} na porta {$port}: " . $killProcess->getErrorOutput());
+                throw new ProcessFailedException($killProcess);
+            }
+
+            Log::info("Processo {$pid} na porta {$port} foi encerrado com sucesso.");
+        }
     }
 
     private function closeFirewallPort($port, $ipAddress)
     {
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            throw new \InvalidArgumentException("Porta inválida: {$port}");
+        }
+        if (!filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+            throw new \InvalidArgumentException("Endereço IP inválido: {$ipAddress}");
+        }
+
         Log::info("Tentando fechar a porta {$port} no firewall para o IP {$ipAddress}");
 
-        $process = new Process(['sudo', 'ufw', 'delete', 'allow', 'from', $ipAddress, 'to', 'any', 'port', $port]);
+        $process = new Process(['sudo', 'ufw', 'delete', 'allow', 'from', $ipAddress, 'to', 'any', 'port', (string) $port]);
         $process->run();
 
         if (!$process->isSuccessful()) {
