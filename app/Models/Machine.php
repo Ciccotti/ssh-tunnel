@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Process\Process;
 
 class Machine extends Model
 {
@@ -64,7 +65,8 @@ class Machine extends Model
         $attempts = 10; // Número de tentativas para encontrar uma porta disponível
 
         for ($i = 0; $i < $attempts; $i++) {
-            $randomPort = rand($minPort, $maxPort);
+            // random_int usa CSPRNG, evitando previsibilidade na escolha de portas.
+            $randomPort = random_int($minPort, $maxPort);
 
             // Verifica se a porta está disponível no sistema operacional e não existe nas requisições de conexão ativas
             if ($this->isPortAvailable($randomPort) && !$this->isPortInUse($randomPort)) {
@@ -84,10 +86,33 @@ class Machine extends Model
      */
     protected function isPortAvailable($port)
     {
-        // Usando shell_exec para verificar portas em uso no sistema (Linux)
-        $result = shell_exec("netstat -tuln | grep :$port");
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            return false;
+        }
 
-        return empty($result); // Se não houver resultado, a porta está disponível
+        // Usa Symfony Process com argumentos em array para evitar injeção de shell.
+        $process = new Process(['ss', '-tuln']);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            // Fallback para netstat com Process sem shell.
+            $process = new Process(['netstat', '-tuln']);
+            $process->run();
+            if (!$process->isSuccessful()) {
+                return false;
+            }
+        }
+
+        // Procura pela porta na saída sem usar shell/grep.
+        $needle = ':' . $port;
+        foreach (preg_split('/\r?\n/', $process->getOutput()) as $line) {
+            if (str_contains($line, $needle)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -113,8 +138,18 @@ class Machine extends Model
      */
     public function openPortInFirewall($ipAddress, $port)
     {
-        // Comando para abrir a porta no firewall para um IP específico (exemplo com ufw)
-        shell_exec("ufw allow from $ipAddress to any port $port");
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            throw new \InvalidArgumentException("Porta inválida: {$port}");
+        }
+        if (!filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+            throw new \InvalidArgumentException("Endereço IP inválido: {$ipAddress}");
+        }
+
+        // Comando para abrir a porta no firewall para um IP específico (ufw)
+        // usando argumentos em array para evitar injeção de shell.
+        $process = new Process(['ufw', 'allow', 'from', $ipAddress, 'to', 'any', 'port', (string) $port]);
+        $process->run();
     }
 
     /**
@@ -125,7 +160,13 @@ class Machine extends Model
      */
     public function closePortInFirewall($port)
     {
-        // Comando para fechar a porta no firewall
-        shell_exec("ufw delete allow $port");
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            throw new \InvalidArgumentException("Porta inválida: {$port}");
+        }
+
+        // Comando para fechar a porta no firewall usando argumentos em array.
+        $process = new Process(['ufw', 'delete', 'allow', (string) $port]);
+        $process->run();
     }
 }

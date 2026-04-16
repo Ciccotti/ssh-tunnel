@@ -10,13 +10,13 @@ class CheckTunnelRequestController extends Controller
 {
     public function check(Request $request)
     {
-        // Captura o hardware_id do corpo da requisição
-        $hardwareId = $request->input('hardware_id');
+        // Valida o hardware_id: deve estar presente, ser uma string e ter tamanho razoável,
+        // evitando consultas ao banco com entradas maliciosamente grandes.
+        $validated = $request->validate([
+            'hardware_id' => 'required|string|max:255',
+        ]);
 
-        // Verifica se o hardware_id foi enviado
-        if (!$hardwareId) {
-            return response()->json(['success' => false, 'message' => 'Hardware ID não encontrado no corpo da requisição.'], 400);
-        }
+        $hardwareId = $validated['hardware_id'];
 
         // Verifica se existe uma máquina com o hardware_id informado
         $machine = Machine::where('hardware_id', $hardwareId)->first();
