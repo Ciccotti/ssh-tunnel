@@ -19,3 +19,34 @@ yarn-error.log
 /.idea
 /.vscode
 /.zed
+
+# Artefatos de estado do VS Code / Electron que não devem estar no repositório
+# (commitados acidentalmente no passado — podem vazar cookies, tokens, logs etc.)
+/Cache/
+/CachedData/
+/CachedProfilesData/
+/Code Cache/
+/Cookies
+/Cookies-journal
+/Crashpad/
+/DawnGraphiteCache/
+/DawnWebGPUCache/
+/Dictionaries/
+/GPUCache/
+/Local Storage/
+/Network Persistent State
+/Preferences
+/Service Worker/
+/Session Storage/
+/Shared Dictionary/
+/SharedStorage
+/TransportSecurity
+/Trust Tokens
+/Trust Tokens-journal
+/User/
+/WebStorage/
+/databases/
+/logs/
+/languagepacks.json
+/machineid
+/name
