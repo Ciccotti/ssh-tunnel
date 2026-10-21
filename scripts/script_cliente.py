@@ -194,10 +194,16 @@ def establish_ssh_tunnel(server_port, service_port):
         return
 
     print(f"Iniciando tentativa de conexão SSH na porta {server_port} para o serviço {service_port}...")
+    # ExitOnForwardFailure: se o servidor recusar o -R (porta ocupada, por
+    # exemplo), o ssh termina em vez de ficar conectado sem túnel.
+    # ServerAliveInterval: mantém a conexão viva atrás de NAT/firewall e faz o
+    # ssh perceber quando ela cai, em vez de ficar travado.
     ssh_command = [
         "ssh",
         "-i", PRIVATE_KEY_PATH,
         "-o", "BatchMode=yes",
+        "-o", "ExitOnForwardFailure=yes",
+        "-o", "ServerAliveInterval=30",
         *_ssh_host_key_options(),
         "-R", f"{server_port}:localhost:{service_port}",
         f"{USERNAME_SSH}@{SERVER_ADDRESS}",
