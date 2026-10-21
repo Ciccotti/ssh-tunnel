@@ -9,6 +9,8 @@ class RemoveHardwareIdFromClientsTable extends Migration
     public function up()
     {
         Schema::table('clients', function (Blueprint $table) {
+            // O índice único precisa sair antes da coluna (exigido pelo SQLite).
+            $table->dropUnique(['hardware_id']);
             $table->dropColumn('hardware_id');
         });
     }

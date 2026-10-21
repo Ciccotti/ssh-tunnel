@@ -1,46 +1,21 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-use Laravel\Fortify\Fortify;
 
+/**
+ * Duplicata de 2024_09_26_190446_add_two_factor_columns_to_users_table, que roda antes desta e já
+ * faz a alteração. Mantida vazia só para não quebrar bancos que já registraram
+ * esta migration na tabela "migrations".
+ */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->text('two_factor_secret')
-                ->after('password')
-                ->nullable();
-
-            $table->text('two_factor_recovery_codes')
-                ->after('two_factor_secret')
-                ->nullable();
-
-            if (Fortify::confirmsTwoFactorAuthentication()) {
-                $table->timestamp('two_factor_confirmed_at')
-                    ->after('two_factor_recovery_codes')
-                    ->nullable();
-            }
-        });
+        //
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(array_merge([
-                'two_factor_secret',
-                'two_factor_recovery_codes',
-            ], Fortify::confirmsTwoFactorAuthentication() ? [
-                'two_factor_confirmed_at',
-            ] : []));
-        });
+        //
     }
 };

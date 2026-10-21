@@ -20,6 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Event::listen(Login::class, [LogUserLogin::class, 'handle']);
+        // App\Listeners\LogUserLogin é registrado automaticamente (event discovery).
     }
 }

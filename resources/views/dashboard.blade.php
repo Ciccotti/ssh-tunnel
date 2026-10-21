@@ -279,7 +279,7 @@
                     @foreach ($client->machines as $machine)
                         var option = document.createElement('option');
                         option.value = "{{ $machine->id }}";
-                        option.text = "{{ $machine->name }}";
+                        option.text = @json($machine->name);
                         machineSelect.appendChild(option);
                     @endforeach
                 }
