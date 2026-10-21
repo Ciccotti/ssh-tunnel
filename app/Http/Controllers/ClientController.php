@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Services\TunnelManager;
 use Illuminate\Http\Request;
+use Illuminate\Process\Exceptions\ProcessFailedException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ClientController extends Controller
 {
@@ -27,8 +30,19 @@ class ClientController extends Controller
     }
 
     // Função para deletar um cliente e todas as suas máquinas
-    public function destroy(Client $client)
+    public function destroy(Client $client, TunnelManager $tunnels)
     {
+        // Fecha os túneis ativos e pendentes das máquinas antes: a exclusão apaga as
+        // solicitações em cascata, mas não remove a regra do firewall nem encerra o túnel.
+        try {
+            foreach ($client->connectionRequests()->active()->get() as $connectionRequest) {
+                $tunnels->close($connectionRequest);
+            }
+        } catch (ProcessFailedException $e) {
+            Log::error("Erro ao fechar os túneis do cliente {$client->id} antes de excluí-lo: " . $e->getMessage());
+            return redirect()->route('dashboard')->with('error', 'Não foi possível fechar os túneis das máquinas do cliente, então ele não foi excluído. Tente novamente.');
+        }
+
         // Exclui todas as máquinas associadas ao cliente
         $client->machines()->delete();
 

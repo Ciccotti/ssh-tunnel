@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
@@ -50,7 +51,34 @@ class ConnectionRequest extends Model
     {
         return $this->hasOne(SshSession::class);
     }
-    
+
+    /**
+     * Solicitações que ainda ocupam uma porta e uma regra no firewall.
+     */
+    public function scopeActive(Builder $query)
+    {
+        $query->whereIn($this->qualifyColumn('status'), ['pending', 'in_progress']);
+    }
+
+    /**
+     * Solicitações 'pending' dentro do prazo, que a máquina cliente ainda pode atender.
+     */
+    public function scopeWaitingForClient(Builder $query)
+    {
+        $query->where($this->qualifyColumn('status'), 'pending')
+            ->where($this->qualifyColumn('created_at'), '>', now()->subSeconds(config('tunnel.pending_ttl')));
+    }
+
+    /**
+     * Indica se a solicitação 'pending' venceu e já pode ser encerrada pelo monitor.
+     */
+    public function isExpired()
+    {
+        $limit = config('tunnel.pending_ttl') + config('tunnel.pending_grace');
+
+        return $this->status === 'pending' && $this->created_at->lte(now()->subSeconds($limit));
+    }
+
     public function setRequestedAtAttribute($value)
     {
         $this->attributes['requested_at'] = Carbon::parse($value);

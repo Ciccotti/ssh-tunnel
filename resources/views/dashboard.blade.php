@@ -57,9 +57,10 @@
                                 <tbody>
                                     @foreach ($client->machines as $machine)
                                         @php
-                                            $connectionRequest = $machine->connectionRequests()->latest()->first();
-                                            $isPending = $connectionRequest && $connectionRequest->status === 'pending';
-                                            $isInProgress = $connectionRequest && $connectionRequest->status === 'in_progress';
+                                            $connectionRequest = $machine->connectionRequests()->latest('id')->first();
+                                            $status = $connectionRequest->status ?? 'no_connection';
+                                            $isPending = $status === 'pending';
+                                            $isInProgress = $status === 'in_progress';
                                         @endphp
                                         <tr>
                                             <td class="border px-4 py-2 text-gray-800">{{ $machine->name }}</td>
@@ -68,24 +69,31 @@
                                                 <input type="number" name="service_port" class="service-port form-control w-full border rounded-lg p-2" placeholder="Ex: 3389" data-machine-id="{{ $machine->id }}">
                                             </td>
                                             <td class="border px-4 py-2 text-gray-800">
-                                                <input type="text" class="random-port form-control w-full border rounded-lg p-2" value="{{ $isInProgress ? '195.200.5.90:' . $machine->random_port : '' }}" placeholder="Clique em 'Abrir Túnel' e aguarde" data-machine-id="{{ $machine->id }}" readonly>
+                                                <input type="text" class="random-port form-control w-full border rounded-lg p-2" value="{{ $isPending || $isInProgress ? config('tunnel.server_host') . ':' . $connectionRequest->server_port : '' }}" placeholder="Clique em 'Abrir Túnel' e aguarde" data-machine-id="{{ $machine->id }}" readonly>
                                             </td>
 
                                             <td class="border px-4 py-2">
                                                 @if ($isPending)
-                                                    <button class="bg-gray-400 text-black px-4 py-2 rounded" disabled>
-                                                        Conectando...
+                                                    <!-- Aguardando a máquina cliente conectar: o botão cancela a solicitação -->
+                                                    <button class="toggle-tunnel-btn bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-700"
+                                                            data-machine-id="{{ $machine->id }}"
+                                                            data-open="false"
+                                                            data-status="{{ $status }}"
+                                                            title="Aguardando a máquina cliente conectar">
+                                                        Cancelar
                                                     </button>
                                                 @elseif ($isInProgress)
-                                                    <button class="toggle-tunnel-btn bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700" 
-                                                            data-machine-id="{{ $machine->id }}" 
-                                                            data-open="false">
+                                                    <button class="toggle-tunnel-btn bg-red-500 text-black px-4 py-2 rounded hover:bg-red-700"
+                                                            data-machine-id="{{ $machine->id }}"
+                                                            data-open="false"
+                                                            data-status="{{ $status }}">
                                                         Fechar Túnel
                                                     </button>
                                                 @else
-                                                    <button class="toggle-tunnel-btn bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700" 
-                                                            data-machine-id="{{ $machine->id }}" 
-                                                            data-open="true">
+                                                    <button class="toggle-tunnel-btn bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700"
+                                                            data-machine-id="{{ $machine->id }}"
+                                                            data-open="true"
+                                                            data-status="{{ $status }}">
                                                         Abrir Túnel
                                                     </button>
                                                 @endif
@@ -224,6 +232,9 @@
     </div>
 
     <script>
+        // Endereço público do servidor de túneis (config/tunnel.php)
+        const TUNNEL_HOST = @json(config('tunnel.server_host'));
+
         function showClientModal() {
             document.getElementById('clientModal').style.display = 'flex';
             addEscListener();
@@ -349,10 +360,52 @@
             });
         });
 
+        // Atualiza o botão e o Endereço de Conexão conforme o status da solicitação
+        function renderTunnelState(machineId, button, status, serverPort) {
+            const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
+            const servicePortInput = document.querySelector(`input[name="service_port"][data-machine-id="${machineId}"]`);
+
+            button.setAttribute('data-status', status);
+            button.disabled = false;
+            button.title = '';
+            button.classList.remove('bg-blue-500', 'hover:bg-blue-700', 'bg-yellow-500', 'hover:bg-yellow-700', 'bg-red-500', 'hover:bg-red-700');
+
+            if (status === 'pending' || status === 'in_progress') {
+                button.setAttribute('data-open', 'false');
+
+                if (status === 'pending') {
+                    // Aguardando a máquina cliente conectar: o botão cancela a solicitação
+                    button.innerText = "Cancelar";
+                    button.title = 'Aguardando a máquina cliente conectar';
+                    button.classList.add('bg-yellow-500', 'hover:bg-yellow-700');
+                } else {
+                    button.innerText = "Fechar Túnel";
+                    button.classList.add('bg-red-500', 'hover:bg-red-700');
+                }
+
+                if (randomPortInput && serverPort) {
+                    randomPortInput.value = `${TUNNEL_HOST}:${serverPort}`;  // Atualiza o campo com o endereço completo
+                }
+            } else {
+                button.innerText = "Abrir Túnel";
+                button.setAttribute('data-open', 'true');
+                button.classList.add('bg-blue-500', 'hover:bg-blue-700');
+
+                // Limpa os campos
+                if (randomPortInput) {
+                    randomPortInput.value = '';
+                }
+                if (servicePortInput) {
+                    servicePortInput.value = '';
+                }
+            }
+        }
+
         document.querySelectorAll('.toggle-tunnel-btn').forEach(button => {
             button.addEventListener('click', function () {
                 const machineId = this.getAttribute('data-machine-id');
                 const isOpening = this.getAttribute('data-open') === 'true';
+                const previousText = this.innerText;
                 let servicePort = '';
 
                 // Se for abrir o túnel, validamos a porta do cliente
@@ -369,18 +422,18 @@
                     }
                 }
 
+                // A mesma rota fecha o túnel ativo ou cancela a solicitação pendente
                 const url = isOpening ? `/machines/${machineId}/open-tunnel` : `/machines/${machineId}/close-tunnel`;
 
-                // Exibe "Conectando..." ao abrir o túnel
-                if (isOpening) {
-                    this.innerText = "Conectando...";
-                    this.disabled = true;
-                }
+                // Desabilita o botão enquanto a requisição está em andamento
+                this.innerText = isOpening ? "Conectando..." : "Aguarde...";
+                this.disabled = true;
 
                 fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify({ service_port: servicePort })
@@ -390,44 +443,17 @@
                     console.log('Resposta do servidor:', data); // Para depuração
 
                     if (data.success) {
-                        const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
-                        const servicePortInput = document.querySelector(`input[name="service_port"][data-machine-id="${machineId}"]`);
-
-                        if (randomPortInput && data.server_port) {
-                            randomPortInput.value = `195.200.5.90:${data.server_port}`;  // Atualiza o campo com o endereço completo
-                        }
-
-                        // Verifica o status retornado para definir o estado do botão
-                        if (isOpening && data.status === 'in_progress') {
-                            this.innerText = "Fechar Túnel";
-                            this.setAttribute('data-open', 'false');
-                            this.disabled = false;
-                            this.classList.remove('bg-blue-500');
-                            this.classList.add('bg-red-500');
-                        } else if (!isOpening) {
-                            this.innerText = "Abrir Túnel";
-                            this.setAttribute('data-open', 'true');
-                            this.classList.remove('bg-red-500');
-                            this.classList.add('bg-blue-500');
-
-                            // Limpa os campos
-                            if (randomPortInput) {
-                                randomPortInput.value = '';
-                            }
-                            if (servicePortInput) {
-                                servicePortInput.value = '';
-                            }
-                        }
+                        renderTunnelState(machineId, this, data.status, data.server_port);
                     } else {
                         alert('Erro ao executar a ação: ' + data.message);
-                        this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+                        this.innerText = previousText;
                         this.disabled = false;
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Ocorreu um erro ao tentar abrir o túnel. Verifique o console para mais detalhes.');
-                    this.innerText = isOpening ? "Abrir Túnel" : "Fechar Túnel";
+                    alert('Ocorreu um erro ao executar a ação. Verifique o console para mais detalhes.');
+                    this.innerText = previousText;
                     this.disabled = false;
                 });
             });
@@ -444,35 +470,10 @@
             })
             .then(response => response.json())
             .then(data => {
-                const randomPortInput = document.querySelector(`input.random-port[data-machine-id="${machineId}"]`);
-                const servicePortInput = document.querySelector(`input[name="service_port"][data-machine-id="${machineId}"]`);
-                if (data.status === 'in_progress') {
-                    button.innerText = "Fechar Túnel";
-                    button.setAttribute('data-open', 'false');
-                    button.disabled = false;
-                    button.classList.remove('bg-blue-500');
-                    button.classList.add('bg-red-500');
-
-                    if (randomPortInput && data.server_port) {
-                        randomPortInput.value = `195.200.5.90:${data.server_port}`;
-                    }
-                } else if (data.status === 'pending') {
-                    button.innerText = "Conectando...";
-                    button.disabled = true;
-                } else {
-                    button.innerText = "Abrir Túnel";
-                    button.setAttribute('data-open', 'true');
-                    button.classList.remove('bg-red-500');
-                    button.classList.add('bg-blue-500');
-                    button.disabled = false;
-
-                    // Limpa os campos
-                    if (randomPortInput) {
-                        randomPortInput.value = '';
-                    }
-                    if (servicePortInput) {
-                        servicePortInput.value = '';
-                    }
+                // Só redesenha quando o status muda (e não durante um clique em andamento),
+                // para não apagar a porta que o usuário está digitando
+                if (!button.disabled && data.status !== button.getAttribute('data-status')) {
+                    renderTunnelState(machineId, button, data.status, data.server_port);
                 }
             })
             .catch(error => {

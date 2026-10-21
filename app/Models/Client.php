@@ -20,4 +20,9 @@ class Client extends Model
     {
         return $this->hasMany(Machine::class);
     }
+
+    public function connectionRequests()
+    {
+        return $this->hasManyThrough(ConnectionRequest::class, Machine::class);
+    }
 }

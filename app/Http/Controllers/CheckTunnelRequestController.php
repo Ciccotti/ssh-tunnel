@@ -25,10 +25,11 @@ class CheckTunnelRequestController extends Controller
             return response()->json(['success' => false, 'message' => 'Máquina não encontrada.'], 404);
         }
 
-        // Busca a requisição de conexão mais antiga com status 'pending'
+        // Busca a requisição de conexão 'pending' mais antiga que ainda está dentro do prazo.
+        // As vencidas são ignoradas: o IP que pediu o túnel pode já ser de outra pessoa.
         $connectionRequest = ConnectionRequest::where('machine_id', $machine->id)
-            ->where('status', 'pending')
-            ->oldest()
+            ->waitingForClient()
+            ->oldest('id')
             ->first();
 
         if (!$connectionRequest) {

@@ -8,77 +8,16 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-// Função para verificar se a porta está aberta usando uma conexão TCP direta.
 use Illuminate\Support\Facades\Log;
-use App\Models\ConnectionRequest;
+use App\Services\TunnelManager;
 
-function isPortOpen($port)
-{
-    $port = (int) $port;
-    if ($port < 1 || $port > 65535) {
-        Log::warning("Porta fora do intervalo válido: {$port}");
-        return false;
-    }
-
-    // Abre um socket TCP para localhost na porta informada com timeout curto.
-    // Evita shell_exec/injeção e remove a dependência externa do 'nc'.
-    $errno = 0;
-    $errstr = '';
-    $connection = @fsockopen('127.0.0.1', $port, $errno, $errstr, 2);
-
-    if (is_resource($connection)) {
-        fclose($connection);
-        Log::info("A porta {$port} está aberta (conexão TCP bem-sucedida).");
-        return true;
-    }
-
-    Log::info("A porta {$port} está fechada: [{$errno}] {$errstr}");
-    return false;
-}
-
-// Função para verificar e atualizar os túneis
+// Função para verificar e atualizar os túneis. Cada rodada (TunnelManager::monitor):
+// - 'pending' com a porta escutando passa para 'in_progress';
+// - 'in_progress' com a porta fechada (cliente desconectou) é fechado como 'completed';
+// - 'pending' vencido (config/tunnel.php) é encerrado como 'failed', removendo a regra do ufw.
 function verificarTunnels()
 {
-    Log::info("Iniciando verificação de túneis...");
-
-    // Busca todos os túneis com status 'pending' ou 'in_progress'
-    $tunnels = ConnectionRequest::whereIn('status', ['pending', 'in_progress'])->get();
-
-    foreach ($tunnels as $tunnel) {
-        Log::info("Verificando túnel na porta: {$tunnel->server_port} com status: {$tunnel->status}");
-        
-        if (isPortOpen($tunnel->server_port)) {
-            Log::info("A porta {$tunnel->server_port} está aberta.");
-            if ($tunnel->status === 'pending') {
-                Log::info("Túnel está 'pending', tentando atualizar para 'in_progress'...");
-                
-                try {
-                    // Tenta atualizar o status para 'in_progress'
-                    $updateSuccess = $tunnel->update(['status' => 'in_progress']);
-                    if ($updateSuccess) {
-                        Log::info("Túnel na porta {$tunnel->server_port} foi atualizado com sucesso para 'in_progress'.");
-                    } else {
-                        Log::error("Erro ao atualizar o túnel na porta {$tunnel->server_port} para 'in_progress'.");
-                    }
-                } catch (\Exception $e) {
-                    Log::error("Erro ao atualizar o status do túnel na porta {$tunnel->server_port}: " . $e->getMessage());
-                }
-            }
-        } else {
-            Log::info("A porta {$tunnel->server_port} está fechada.");
-            if ($tunnel->status === 'in_progress') {
-                // Chama o controlador para fechar o túnel se a conexão foi encerrada
-                Log::info("Tentando fechar o túnel na porta {$tunnel->server_port}...");
-                try {
-                    // Chamando o fechamento com a opção de forçar o fechamento sem verificar o user_id
-                    app('App\Http\Controllers\CloseTunnelController')->close(new \Illuminate\Http\Request(), $tunnel->machine_id, true);
-                    Log::info("Túnel na porta {$tunnel->server_port} foi fechado com sucesso.");
-                } catch (\Exception $e) {
-                    Log::error("Erro ao tentar fechar o túnel na porta {$tunnel->server_port}: " . $e->getMessage());
-                }
-            }
-        }
-    }
+    app(TunnelManager::class)->monitor();
 }
 
 function criarThread()
@@ -108,4 +47,3 @@ function criarThread()
 
 // Inicia o processo de monitoramento
 criarThread();
-

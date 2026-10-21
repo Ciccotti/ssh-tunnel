@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Machine;
+use App\Services\TunnelManager;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Process\Exceptions\ProcessFailedException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class MachineController extends Controller
@@ -45,8 +48,19 @@ class MachineController extends Controller
     }
 
     // Função para deletar uma máquina específica
-    public function destroy(Machine $machine)
+    public function destroy(Machine $machine, TunnelManager $tunnels)
     {
+        // Fecha os túneis ativos e pendentes antes: a exclusão apaga as solicitações
+        // em cascata, mas não remove a regra do firewall nem encerra o túnel.
+        try {
+            foreach ($machine->connectionRequests()->active()->get() as $connectionRequest) {
+                $tunnels->close($connectionRequest);
+            }
+        } catch (ProcessFailedException $e) {
+            Log::error("Erro ao fechar os túneis da máquina {$machine->id} antes de excluí-la: " . $e->getMessage());
+            return redirect()->route('dashboard')->with('error', 'Não foi possível fechar o túnel da máquina, então ela não foi excluída. Tente novamente.');
+        }
+
         // Exclui a máquina
         $machine->delete();
 
