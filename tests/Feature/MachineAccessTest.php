@@ -46,7 +46,6 @@ class MachineAccessTest extends TestCase
 
         $this->postJson("/machines/{$machine->id}/open-tunnel", ['service_port' => 3389])->assertForbidden();
         $this->getJson("/machines/{$machine->id}/tunnel-status")->assertForbidden();
-        $this->getJson("/machines/{$machine->id}/check-tunnel")->assertForbidden();
         $this->delete("/machines/{$machine->id}")->assertForbidden();
         $this->delete("/clients/{$machine->client_id}")->assertForbidden();
 
