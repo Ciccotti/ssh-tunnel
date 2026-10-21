@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Machine;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Validation\Rule;
 
 class MachineController extends Controller
 {
@@ -13,7 +14,8 @@ class MachineController extends Controller
     {
         // Valida os dados recebidos
         $validated = $request->validate([
-            'client_id' => 'required|exists:clients,id',
+            // O cliente precisa existir e pertencer ao usuário logado
+            'client_id' => ['required', Rule::exists('clients', 'id')->where('user_id', auth()->id())],
             'name' => 'required|string|max:255',
             'specifications' => 'nullable|string',
             'hardware_id' => 'required|string|max:255|unique:machines,hardware_id',

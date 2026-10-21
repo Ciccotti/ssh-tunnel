@@ -22,7 +22,8 @@ Route::middleware([
 
     // Rota do dashboard que carrega os clientes e suas máquinas
     Route::get('/dashboard', function () {
-        $clients = Client::with('machines')->get(); // Carrega clientes com suas máquinas
+        // Carrega apenas os clientes (e máquinas) do usuário logado
+        $clients = Client::with('machines')->where('user_id', auth()->id())->get();
         return view('dashboard', compact('clients')); // Passa os clientes para a view
     })->name('dashboard');
 
@@ -31,25 +32,25 @@ Route::middleware([
     Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
 
     // Excluir cliente e todas as suas máquinas
-    Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
+    Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy')->can('manage', 'client');
 
     // CRUD de Máquinas
     // Armazenar nova máquina
     Route::post('/machines', [MachineController::class, 'store'])->name('machines.store');
 
     // Excluir máquina específica
-    Route::delete('/machines/{machine}', [MachineController::class, 'destroy'])->name('machines.destroy');
+    Route::delete('/machines/{machine}', [MachineController::class, 'destroy'])->name('machines.destroy')->can('manage', 'machine');
 
     // Rotas para abertura e fechamento de túnel
     // Rota para abrir o túnel de uma máquina
-    Route::post('/machines/{machine}/open-tunnel', [OpenTunnelController::class, 'open'])->name('machines.open-tunnel');
+    Route::post('/machines/{machine}/open-tunnel', [OpenTunnelController::class, 'open'])->name('machines.open-tunnel')->can('manage', 'machine');
 
     // Rota para fechar o túnel de uma máquina
     Route::post('/machines/{machine}/close-tunnel', [CloseTunnelController::class, 'close'])->name('machines.close-tunnel');
 
     // Rota para verificar o status do túnel de uma máquina
-    Route::get('/machines/{machine}/tunnel-status', [OpenTunnelController::class, 'getTunnelStatus'])->name('machines.tunnel-status');
+    Route::get('/machines/{machine}/tunnel-status', [OpenTunnelController::class, 'getTunnelStatus'])->name('machines.tunnel-status')->can('manage', 'machine');
     
-    Route::get('/machines/{machine}/check-tunnel', [OpenTunnelController::class, 'checkAndSetInProgress'])->name('machines.check-tunnel');
+    Route::get('/machines/{machine}/check-tunnel', [OpenTunnelController::class, 'checkAndSetInProgress'])->name('machines.check-tunnel')->can('manage', 'machine');
 
 });
