@@ -61,6 +61,7 @@ systemctl is-active --quiet ssh-tunnel-client || fail "o serviço do cliente nã
 MACHINE_ID=$(sql "SELECT MAX(id) FROM machines")
 [ -n "$MACHINE_ID" ] && [ "$MACHINE_ID" != NULL ] || fail "a máquina não apareceu no painel"
 sudo test -s /opt/ssh-tunnel-client/dados/known_hosts || fail "o cliente não recebeu o known_hosts do servidor"
+[ "$(sudo stat -c %a /opt/ssh-tunnel-client/dados/id_ed25519)" = 600 ] || fail "a chave privada do cliente não está com permissão 600"
 
 step "Abre um túnel até um serviço HTTP local"
 echo tunel-ok > "$SITE/index.html"

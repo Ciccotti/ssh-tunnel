@@ -275,6 +275,15 @@ def _ssh_base_command():
     ]
 
 
+def restrict_private_key(path):
+    """No Linux, deixa a chave privada legível só pelo dono (0600), como o ssh exige.
+
+    No Windows quem cuida disso é o instalador, com as permissões NTFS.
+    """
+    if os.name == "posix" and os.path.exists(path) and os.stat(path).st_mode & 0o077:
+        os.chmod(path, 0o600)
+
+
 def check_private_key():
     """Confere se o ssh consegue usar a chave privada.
 
@@ -408,6 +417,8 @@ def enroll(panel_url, token, config_path):
             print(f"Erro ao gerar a chave SSH: {result.stderr.strip()}")
             return 1
 
+    restrict_private_key(key_path)
+
     with open(key_path + ".pub", encoding="utf-8") as f:
         public_key = f.read().strip()
 
@@ -531,6 +542,7 @@ def main():
         # Instalado pelo painel: o instalador já cuidou da chave e das permissões
         load_config(args.config)
         print(f"Cliente iniciado. Hardware ID: {HARDWARE_ID}")
+        restrict_private_key(PRIVATE_KEY_PATH)
         if check_private_key() and not is_valid_ssh_key():
             print("Aviso: o servidor recusou a chave SSH desta máquina. As próximas solicitações vão tentar de novo.")
         poll_forever()

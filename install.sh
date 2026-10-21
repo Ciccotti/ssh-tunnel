@@ -29,6 +29,7 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 APP_DIR=/var/www/ssh-tunnel
 WEB_USER=www-data
 TUNNEL_USER=tunnel
+KEYS_COMMAND=/usr/libexec/ssh-tunnel/authorized-keys
 REPO=${REPO:-https://github.com/Ciccotti/ssh-tunnel.git}
 BRANCH=${BRANCH:-master}
 
@@ -279,14 +280,25 @@ configure_tunnel_ssh() {
     fi
     usermod -p '*' "$TUNNEL_USER"
 
-    # O sshd pergunta ao painel quais chaves aceitar (cada máquina tem a sua)
-    cat > /usr/local/bin/ssh-tunnel-authorized-keys <<EOF
+    # O sshd pergunta ao painel quais chaves aceitar (cada máquina tem a sua). Ele só
+    # roda o comando se o arquivo e todas as pastas acima dele forem do root e não
+    # puderem ser alteradas por outros usuários.
+    install -d -m 0755 -o root -g root "$(dirname "$KEYS_COMMAND")"
+    cat > "$KEYS_COMMAND" <<EOF
 #!/bin/sh
 # Chaves das máquinas clientes cadastradas no painel (gerado pelo install.sh do ssh-tunnel)
 exec /usr/bin/php $APP_DIR/artisan tunnel:authorized-keys "\$1" 2>/dev/null
 EOF
-    chown root:root /usr/local/bin/ssh-tunnel-authorized-keys
-    chmod 0755 /usr/local/bin/ssh-tunnel-authorized-keys
+    chown root:root "$KEYS_COMMAND"
+    chmod 0755 "$KEYS_COMMAND"
+    rm -f /usr/local/bin/ssh-tunnel-authorized-keys
+
+    local dir=$KEYS_COMMAND
+    while [ "$dir" != / ]; do
+        [ "$(stat -c '%u' "$dir")" = 0 ] && [ $(( 0$(stat -c '%a' "$dir") & 022 )) = 0 ] \
+            || fail "$dir precisa ser do root e sem permissão de escrita para grupo/outros (exigência do sshd para $KEYS_COMMAND)."
+        dir=$(dirname "$dir")
+    done
 
     # O usuário dos túneis só pode fazer "ssh -R" para porta TCP: sem shell, sem -L,
     # sem encaminhar sockets Unix (ex.: o do MariaDB), sem senha
@@ -294,7 +306,7 @@ EOF
     cat > /etc/ssh/sshd_config.d/ssh-tunnel.conf <<EOF
 # Usuário dos túneis do ssh-tunnel (gerado pelo install.sh)
 Match User $TUNNEL_USER
-    AuthorizedKeysCommand /usr/local/bin/ssh-tunnel-authorized-keys %u
+    AuthorizedKeysCommand $KEYS_COMMAND %u
     AuthorizedKeysCommandUser $WEB_USER
     PasswordAuthentication no
     KbdInteractiveAuthentication no

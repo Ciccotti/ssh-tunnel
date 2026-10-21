@@ -176,7 +176,7 @@ O `install.sh` faz todos os passos abaixo. Eles ficam aqui para quem quer instal
 
 ### 4. SSH dos Túneis
 
-   Crie o usuário que recebe os túneis (`useradd --system --create-home --shell /bin/sh tunnel && usermod -p '*' tunnel`) e o script `/usr/local/bin/ssh-tunnel-authorized-keys`, do root e com permissão `0755`, ajustando o caminho do painel:
+   Crie o usuário que recebe os túneis (`useradd --system --create-home --shell /bin/sh tunnel && usermod -p '*' tunnel`) e o script `/usr/libexec/ssh-tunnel/authorized-keys`, do root e com permissão `0755` (o `sshd` exige que ele e todas as pastas acima sejam do root e sem escrita para outros), ajustando o caminho do painel:
 
    ```sh
    #!/bin/sh
@@ -187,7 +187,7 @@ O `install.sh` faz todos os passos abaixo. Eles ficam aqui para quem quer instal
 
    ```
    Match User tunnel
-       AuthorizedKeysCommand /usr/local/bin/ssh-tunnel-authorized-keys %u
+       AuthorizedKeysCommand /usr/libexec/ssh-tunnel/authorized-keys %u
        AuthorizedKeysCommandUser www-data
        PasswordAuthentication no
        KbdInteractiveAuthentication no
