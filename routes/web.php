@@ -6,11 +6,20 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\OpenTunnelController;
 use App\Http\Controllers\CloseTunnelController;
+use App\Http\Controllers\EnrollmentController;
 
 // Redireciona a rota inicial "/" para o dashboard
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
+
+// Instalação do cliente com um comando (públicas: o código de uso único vai na URL)
+Route::get('/instalar/cliente.py', [EnrollmentController::class, 'clientScript'])->name('install.client');
+
+Route::get('/instalar/{token}/{os}', [EnrollmentController::class, 'script'])
+    ->where(['token' => '[A-Za-z0-9]{32}', 'os' => 'windows|linux'])
+    ->middleware('throttle:30,1')
+    ->name('install.script');
 
 // Protege as rotas com middleware de autenticação e middleware web para sessões
 Route::middleware([
@@ -33,6 +42,10 @@ Route::middleware([
 
     // Excluir cliente e todas as suas máquinas
     Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy')->can('manage', 'client');
+
+    // Instalar em Nova Máquina: gera o comando de instalação e acompanha o seu uso
+    Route::post('/clients/{client}/enrollment-tokens', [EnrollmentController::class, 'store'])->name('enrollment-tokens.store')->can('manage', 'client');
+    Route::get('/enrollment-tokens/{enrollmentToken}', [EnrollmentController::class, 'status'])->name('enrollment-tokens.status')->can('manage', 'enrollmentToken');
 
     // CRUD de Máquinas
     // Armazenar nova máquina

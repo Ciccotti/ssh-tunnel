@@ -111,6 +111,9 @@
                     <button class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700" onclick="showClientModal()">
                         Cadastrar Cliente
                     </button>
+                    <button class="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700" onclick="showInstallModal()">
+                        Instalar em Nova Máquina
+                    </button>
                     <button class="bg-green-500 text-black px-4 py-2 rounded hover:bg-green-700" onclick="showMachineModal()">
                         Cadastrar Máquina
                     </button>
@@ -141,6 +144,58 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal para instalar o cliente em uma nova máquina com um comando -->
+    <div id="installModal" class="fixed inset-0 hidden items-center justify-center z-50 bg-black bg-opacity-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl">
+            <h2 class="text-xl font-semibold mb-2 text-gray-800">Instalar em Nova Máquina</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                Gere o comando e rode-o na máquina que vai receber o túnel. Ele instala o cliente,
+                cadastra a máquina neste painel e deixa tudo rodando, sem precisar do Hardware ID.
+            </p>
+
+            @if ($clients->isEmpty())
+                <p class="text-gray-800 mb-4">Cadastre um cliente primeiro: a máquina instalada fica dentro dele.</p>
+            @else
+                <div class="mb-4 flex gap-2 items-end">
+                    <div class="flex-1">
+                        <label for="installClientSelect" class="block text-sm font-medium text-gray-800">Cliente</label>
+                        <select id="installClientSelect" class="form-control w-full border rounded-lg p-2">
+                            <option value="">Selecione um Cliente</option>
+                            @foreach ($clients as $client)
+                                <option value="{{ $client->id }}">{{ $client->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button id="generateInstallButton" type="button" onclick="generateInstallCommand()" class="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-700">
+                        Gerar comando
+                    </button>
+                </div>
+
+                <div id="installCommands" class="hidden">
+                    <label class="block text-sm font-medium text-gray-800">Windows: abra o PowerShell como administrador e cole</label>
+                    <div class="flex gap-2 mb-4">
+                        <input id="installCommandWindows" type="text" readonly class="form-control w-full border rounded-lg p-2 font-mono text-sm bg-gray-50">
+                        <button type="button" onclick="copyInstallCommand('installCommandWindows', this)" class="bg-gray-200 text-black px-3 py-2 rounded hover:bg-gray-300">Copiar</button>
+                    </div>
+
+                    <label class="block text-sm font-medium text-gray-800">Linux: cole no terminal</label>
+                    <div class="flex gap-2 mb-4">
+                        <input id="installCommandLinux" type="text" readonly class="form-control w-full border rounded-lg p-2 font-mono text-sm bg-gray-50">
+                        <button type="button" onclick="copyInstallCommand('installCommandLinux', this)" class="bg-gray-200 text-black px-3 py-2 rounded hover:bg-gray-300">Copiar</button>
+                    </div>
+
+                    <p id="installStatus" class="text-sm text-gray-800"></p>
+                </div>
+            @endif
+
+            <div class="flex justify-end mt-4">
+                <button type="button" onclick="hideInstallModal()" class="bg-gray-400 text-black px-4 py-2 rounded">
+                    Fechar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -243,6 +298,90 @@
         function hideClientModal() {
             document.getElementById('clientModal').style.display = 'none';
             removeEscListener();
+        }
+
+        let installStatusTimer = null;
+
+        function showInstallModal() {
+            document.getElementById('installModal').style.display = 'flex';
+            addEscListener();
+        }
+
+        function hideInstallModal() {
+            document.getElementById('installModal').style.display = 'none';
+            clearInterval(installStatusTimer);
+            removeEscListener();
+        }
+
+        // Gera o comando de instalação (código de uso único) e acompanha até a máquina se registrar
+        function generateInstallCommand() {
+            const clientId = document.getElementById('installClientSelect').value;
+            if (!clientId) {
+                alert('Selecione o cliente em que a máquina vai ficar.');
+                return;
+            }
+
+            const button = document.getElementById('generateInstallButton');
+            button.disabled = true;
+            clearInterval(installStatusTimer);
+
+            fetch(`/clients/${clientId}/enrollment-tokens`, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                button.disabled = false;
+                if (!data.success) {
+                    alert('Não foi possível gerar o comando: ' + (data.message || 'erro desconhecido'));
+                    return;
+                }
+
+                document.getElementById('installCommandWindows').value = data.commands.windows;
+                document.getElementById('installCommandLinux').value = data.commands.linux;
+                document.getElementById('installCommands').classList.remove('hidden');
+
+                const status = document.getElementById('installStatus');
+                const expiresAt = new Date(data.expires_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                status.innerText = `Aguardando a máquina... O comando vale para uma única máquina, até ${expiresAt}.`;
+
+                installStatusTimer = setInterval(() => {
+                    fetch(data.status_url, { headers: { 'Accept': 'application/json' } })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.installed) {
+                            clearInterval(installStatusTimer);
+                            status.innerText = `Máquina "${result.machine}" instalada! Atualizando a página...`;
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else if (result.expired) {
+                            clearInterval(installStatusTimer);
+                            status.innerText = 'O comando expirou. Gere um novo.';
+                        }
+                    })
+                    .catch(error => console.error('Erro ao verificar a instalação:', error));
+                }, 3000);
+            })
+            .catch(error => {
+                button.disabled = false;
+                console.error('Erro:', error);
+                alert('Ocorreu um erro ao gerar o comando. Verifique o console para mais detalhes.');
+            });
+        }
+
+        function copyInstallCommand(inputId, button) {
+            const input = document.getElementById(inputId);
+            const done = () => {
+                button.innerText = 'Copiado!';
+                setTimeout(() => button.innerText = 'Copiar', 2000);
+            };
+
+            // A API de clipboard só existe em HTTPS; sem ela, seleciona o texto para Ctrl+C
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(input.value).then(done, () => input.select());
+            } else {
+                input.select();
+                document.execCommand('copy') && done();
+            }
         }
 
         function showMachineModal() {
@@ -499,6 +638,7 @@
         function escFunction(event) {
             if (event.key === 'Escape') {
                 hideClientModal();
+                hideInstallModal();
                 hideMachineModal();
                 hideDeleteModal();
             }

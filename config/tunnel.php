@@ -44,4 +44,36 @@ return [
 
     'pending_grace' => 60,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Acesso SSH das máquinas clientes
+    |--------------------------------------------------------------------------
+    |
+    | Usuário e porta do sshd usados pelo "ssh -R" das máquinas instaladas pelo
+    | painel. As chaves dessas máquinas são entregues ao sshd pelo comando
+    | "php artisan tunnel:authorized-keys" (AuthorizedKeysCommand).
+    |
+    | ssh_host_keys: chaves públicas do sshd, enviadas ao cliente na instalação
+    | para ele conferir o servidor (known_hosts) já na primeira conexão.
+    |
+    */
+
+    'ssh_user' => env('TUNNEL_SSH_USER', 'tunnel'),
+
+    'ssh_port' => (int) env('TUNNEL_SSH_PORT', 22),
+
+    'ssh_host_keys' => env('TUNNEL_SSH_HOST_KEYS', '/etc/ssh/ssh_host_*_key.pub'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validade do comando de instalação
+    |--------------------------------------------------------------------------
+    |
+    | Tempo, em segundos, em que o comando gerado em "Instalar em Nova Máquina"
+    | pode ser usado. Cada comando vale para uma única máquina.
+    |
+    */
+
+    'enrollment_ttl' => (int) env('TUNNEL_ENROLLMENT_TTL', 1800),
+
 ];

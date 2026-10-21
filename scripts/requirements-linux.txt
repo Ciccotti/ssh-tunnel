@@ -1,1 +1,1 @@
-requests
+# O script cliente usa só a biblioteca padrão do Python 3.

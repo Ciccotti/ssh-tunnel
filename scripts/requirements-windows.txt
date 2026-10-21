@@ -1,2 +1,2 @@
-requests
+# Só para a instalação manual: o Hardware ID do modo manual é lido via WMI.
 wmi
