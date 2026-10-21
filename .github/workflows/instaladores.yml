@@ -1,0 +1,75 @@
+name: Instaladores
+
+# Testes de ponta a ponta dos instaladores, em VMs descartáveis do GitHub:
+# - Linux: install.sh do servidor + instalador do cliente + túnel de verdade
+# - Windows: instalador do cliente ("irm | iex") com a tarefa agendada como SYSTEM
+on:
+  push:
+    paths:
+      - install.sh
+      - resources/install/**
+      - scripts/script_cliente.py
+      - app/**
+      - routes/**
+      - database/**
+      - tests/e2e/**
+      - config/**
+      - bootstrap/**
+      - resources/views/**
+      - composer.*
+      - package*.json
+      - .env.example
+      - .github/workflows/instaladores.yml
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Servidor e cliente no Linux
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # A imagem do GitHub já vem com MySQL, PHP de um PPA e Apache: deixa a VM
+      # parecida com um Ubuntu recém-instalado antes de rodar o install.sh
+      - name: Limpa a VM
+        run: |
+          sudo systemctl stop mysql apache2 nginx 2>/dev/null || true
+          sudo apt-get purge -y -qq 'mysql*' 'php*' 'apache2*' >/dev/null
+          sudo add-apt-repository --remove -y ppa:ondrej/php >/dev/null 2>&1 || true
+          sudo rm -rf /var/lib/mysql /etc/mysql /usr/local/bin/composer /usr/bin/composer
+          sudo apt-get update -qq
+
+      - name: Testa o install.sh e o instalador do cliente
+        run: bash tests/e2e/linux.sh
+
+  windows:
+    name: Cliente no Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, intl, zip, fileinfo
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepara o painel
+        shell: pwsh
+        run: |
+          composer install --no-interaction --no-progress
+          npm ci
+          npm run build
+          Copy-Item .env.example .env
+          php artisan key:generate
+          New-Item -ItemType File database/database.sqlite | Out-Null
+          php artisan migrate --force
+
+      # Windows PowerShell 5.1, o mesmo que vem em todo Windows
+      - name: Testa o instalador do Windows
+        shell: powershell
+        run: .\tests\e2e\windows.ps1
