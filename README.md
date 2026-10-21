@@ -130,7 +130,7 @@ composer run test    # testes
 - **install.sh**: Instalador do servidor (veja [Instalação Rápida](#instalação-rápida)).
 - **resources/install/**: Instaladores do cliente para Windows (`windows.ps1`) e Linux (`linux.sh`), entregues pelo painel com o código de instalação embutido.
 - **scripts/script_cliente.py**: Script Python para execução nas máquinas clientes, que monitora o servidor em busca de solicitações de túnel e, caso existam, estabelece o túnel SSH reverso.
-- **scripts/requirements-windows.txt** e **scripts/requirements-linux.txt**: Dependências do script cliente na instalação manual.
+- **scripts/requirements-windows.txt**: Dependência do script cliente na instalação manual no Windows (no Linux ele usa só a biblioteca padrão do Python).
 - **scripts/monitor_tunnels.php**: Monitor que roda no servidor e verifica os túneis a cada 2 segundos (veja [Ciclo de Vida de um Túnel](#ciclo-de-vida-de-um-túnel)).
 - **app/Services/TunnelManager.php**: Comandos de sistema usados pelo painel e pelo monitor para abrir e fechar túneis (regra do `ufw` e processo do túnel).
 - **app/Http/Controllers/EnrollmentController.php**: Comandos de instalação gerados no painel e registro das máquinas clientes.

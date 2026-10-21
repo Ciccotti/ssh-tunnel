@@ -76,23 +76,6 @@ class OpenTunnelController extends Controller
         ]);
     }
 
-    // Método para verificar e atualizar o status do túnel
-    public function checkAndSetInProgress(Machine $machine)
-    {
-        $connectionRequest = $machine->connectionRequests()->latest('id')->first();
-
-        if (!$connectionRequest) {
-            return response()->json(['status' => 'no_connection']);
-        }
-
-        // Se a solicitação pendente já tem o túnel escutando na porta, muda o status para 'in_progress'
-        if ($connectionRequest->status === 'pending' && $this->tunnels->isListening($connectionRequest->server_port)) {
-            $connectionRequest->update(['status' => 'in_progress']);
-        }
-
-        return response()->json(['status' => $connectionRequest->status]);
-    }
-
     // Função para verificar o status do túnel de uma máquina
     public function getTunnelStatus(Machine $machine)
     {

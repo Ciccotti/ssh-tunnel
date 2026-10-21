@@ -2,13 +2,7 @@
 
 use App\Http\Controllers\CheckTunnelRequestController;
 use App\Http\Controllers\EnrollmentController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-// Rota para obter informações do usuário autenticado (exemplo existente)
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
 
 // Rota para verificar solicitações de túnel para uma máquina com base no Hardware ID.
 // Protegida por rate limit (throttle) para mitigar abuso/enumeração de hardware IDs.

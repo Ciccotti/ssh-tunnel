@@ -43,16 +43,6 @@ class ConnectionRequest extends Model
     }
 
     /**
-     * Relacionamento: Uma solicitação de conexão tem uma sessão SSH.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
-     */
-    public function sshSession()
-    {
-        return $this->hasOne(SshSession::class);
-    }
-
-    /**
      * Solicitações que ainda ocupam uma porta e uma regra no firewall.
      */
     public function scopeActive(Builder $query)
