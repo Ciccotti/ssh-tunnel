@@ -133,12 +133,22 @@ install_packages() {
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -qq
     local packages=(nginx mariadb-server php-fpm php-cli php-mysql php-mbstring php-xml php-curl php-zip
-        php-bcmath php-intl php-sqlite3 git curl unzip xz-utils rsync ufw openssh-server lsof sudo ca-certificates)
+        php-bcmath php-intl php-sqlite3 git curl unzip xz-utils rsync ufw openssh-server lsof sudo ca-certificates
+        unattended-upgrades)
     [ "$HTTPS" = sim ] && packages+=(certbot python3-certbot-nginx)
     apt-get install -y -qq "${packages[@]}" >/dev/null
 
+    # O "apt-get install" acima não atualiza o que já estava instalado (php8.3-fpm etc.):
+    # atualiza agora, para que rodar o install.sh de novo traga as correções de segurança
+    local installed_php
+    mapfile -t installed_php < <(dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' 'php*' 2>/dev/null | awk '$1 == "ii" {print $2}')
+    apt-get install -y -qq --only-upgrade "${packages[@]}" "${installed_php[@]}" >/dev/null
+
     php -r 'exit(PHP_VERSION_ID >= 80200 ? 0 : 1);' || fail "o painel precisa do PHP 8.2 ou mais novo."
     PHP_VERSION=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
+
+    configure_php_security
+    configure_automatic_updates
 
     if [ ! -x /usr/local/bin/composer ]; then
         info "Instalando o Composer..."
@@ -148,6 +158,56 @@ install_packages() {
         install -m 0755 /tmp/composer.phar /usr/local/bin/composer
         rm -f /tmp/composer.phar
     fi
+}
+
+# Versão mínima do PHP de cada distribuição com a correção da PHP2Shell
+# (CVE-2026-109618 e CVE-2026-109619, execução remota de código sem login, 21/10/2026)
+php_min_version() {
+    case "$1" in
+        php8.2-fpm) echo 8.2.35-1~deb12u1 ;;        # Debian 12 (DLA-4848-1)
+        php8.3-fpm) echo 8.3.6-0ubuntu0.24.04.13 ;; # Ubuntu 24.04 (USN-8948-1)
+        php8.4-fpm) echo 8.4.27-1~deb13u1 ;;        # Debian 13 (DSA-6574-1)
+    esac
+}
+
+configure_php_security() {
+    local package=php$PHP_VERSION-fpm installed minimum conf_dir=/etc/php/$PHP_VERSION/fpm/conf.d
+    installed=$(dpkg-query -W -f='${Version}' "$package" 2>/dev/null || true)
+    minimum=$(php_min_version "$package")
+    PHP_OUTDATED=""
+    if [ -n "$installed" ] && [ -n "$minimum" ] && dpkg --compare-versions "$installed" lt "$minimum"; then
+        PHP_OUTDATED="$package $installed"
+    fi
+
+    # O painel não usa o progresso de upload da sessão, porta de entrada da PHP2Shell
+    cat > "$conf_dir/99-ssh-tunnel.ini" <<EOF
+; ssh-tunnel (gerado pelo install.sh): o painel não usa o progresso de upload da sessão
+session.upload_progress.enabled = 0
+EOF
+
+    # Enquanto a distribuição não publica o PHP corrigido, aplica a mitigação
+    # recomendada pelo php.net; ela sai sozinha quando o install.sh roda com o PHP já corrigido
+    if [ -n "$PHP_OUTDATED" ]; then
+        warn "o PHP instalado ($PHP_OUTDATED) ainda não tem a correção da falha PHP2Shell (CVE-2026-109618 e CVE-2026-109619), que chega na versão $minimum. Aplicando a mitigação temporária do php.net."
+        cat > "$conf_dir/98-ssh-tunnel-php2shell.ini" <<EOF
+; ssh-tunnel (gerado pelo install.sh): mitigação temporária da PHP2Shell até o PHP ser atualizado
+memory_limit = -1
+post_max_size = 8M
+EOF
+    else
+        rm -f "$conf_dir/98-ssh-tunnel-php2shell.ini"
+    fi
+}
+
+# Atualizações de segurança automáticas (o padrão do Ubuntu; no Debian vêm desligadas).
+# Não mexe numa configuração que o administrador já tenha feito.
+configure_automatic_updates() {
+    [ -e /etc/apt/apt.conf.d/20auto-upgrades ] && return 0
+    cat > /etc/apt/apt.conf.d/20auto-upgrades <<EOF
+// Atualizações de segurança automáticas (ativadas pelo install.sh do ssh-tunnel)
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
 }
 
 install_code() {
@@ -470,6 +530,10 @@ main() {
     fi
     echo "    Para instalar o cliente numa máquina: no painel, \"Instalar em Nova Máquina\"."
     echo "    Para atualizar o painel no futuro, rode este mesmo comando de novo."
+    echo "    PHP: $(dpkg-query -W -f='${Package} ${Version}' "php$PHP_VERSION-fpm")"
+    if [ -n "$PHP_OUTDATED" ]; then
+        warn "o PHP ainda está sem a correção da PHP2Shell (a mitigação temporária está ativa). Quando a distribuição publicar a atualização, rode este comando de novo."
+    fi
 }
 
 main "$@"

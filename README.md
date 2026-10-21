@@ -73,6 +73,32 @@ As demais opções estão no início do `install.sh`.
 
 > Ao informar o e-mail com HTTPS, você aceita os termos de uso do Let's Encrypt. O instalador ativa o `ufw` liberando só SSH, HTTP e HTTPS: outros serviços expostos no servidor deixam de ser acessíveis de fora.
 
+### Atualizações de segurança
+
+O `install.sh` cuida das atualizações de segurança do servidor:
+
+- toda vez que roda, atualiza o PHP e os demais pacotes do painel;
+- liga as atualizações automáticas de segurança do sistema (`unattended-upgrades`);
+- confere se o PHP já tem a correção da falha PHP2Shell (CVE-2026-109618 e CVE-2026-109619, de 21/10/2026), que permite executar código no servidor sem login.
+
+Se a distribuição ainda não publicou o PHP corrigido, o instalador aplica a mitigação temporária recomendada pelo php.net e avisa no fim. Basta rodar de novo quando a atualização sair.
+
+Num servidor instalado à mão, atualize os pacotes e reinicie o PHP-FPM (troque `8.3` pela versão do servidor):
+
+```bash
+sudo apt update && sudo apt upgrade
+sudo systemctl restart php8.3-fpm
+```
+
+Versões com a correção da PHP2Shell (confira com `dpkg -l 'php*-fpm'`):
+
+| Sistema | Pacote | Versão corrigida |
+|---|---|---|
+| Ubuntu 24.04 | `php8.3` | `8.3.6-0ubuntu0.24.04.13` ou mais nova |
+| Debian 12 | `php8.2` | `8.2.35-1~deb12u1` ou mais nova |
+| Debian 13 | `php8.4` | `8.4.27-1~deb13u1` ou mais nova |
+| PHP oficial (php.net) | — | 8.2.35, 8.3.36, 8.4.27 ou 8.5.12 |
+
 ### Máquinas clientes
 
 No painel, clique em **Instalar em Nova Máquina**, escolha o cliente e copie o comando:

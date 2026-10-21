@@ -34,6 +34,17 @@ sudo ORIGEM="$REPO_DIR" DOMINIO=127.0.0.1 EMAIL=admin@exemplo.com bash "$REPO_DI
 curl -fsS -o /dev/null "$PANEL/up" || fail "o painel não respondeu em $PANEL/up"
 systemctl is-active --quiet ssh-tunnel-monitor || fail "o monitor de túneis não está rodando"
 
+step "O PHP tem a correção da PHP2Shell (CVE-2026-109618 e CVE-2026-109619)"
+PHP_VERSION=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
+PHP_FPM_VERSION=$(dpkg-query -W -f='${Version}' "php$PHP_VERSION-fpm")
+echo "php$PHP_VERSION-fpm $PHP_FPM_VERSION"
+# Ubuntu 24.04: corrigido em 8.3.6-0ubuntu0.24.04.13 (USN-8948-1)
+[ "$PHP_VERSION" != 8.3 ] || dpkg --compare-versions "$PHP_FPM_VERSION" ge 8.3.6-0ubuntu0.24.04.13 \
+    || fail "o PHP-FPM instalado ($PHP_FPM_VERSION) ainda não tem a correção da PHP2Shell"
+UPLOAD_PROGRESS=$(sudo "php-fpm$PHP_VERSION" -i | grep '^session.upload_progress.enabled =>' || true)
+echo "$UPLOAD_PROGRESS"
+[[ $UPLOAD_PROGRESS == *"=> Off =>"* ]] || fail "o progresso de upload da sessão continua ligado no PHP-FPM"
+
 step "Entra no painel"
 sudo -u www-data php /var/www/ssh-tunnel/artisan user:create "$EMAIL" --password="$PASSWORD"
 curl -fsS -c "$JAR" -b "$JAR" "$PANEL/login" -o /tmp/login.html
